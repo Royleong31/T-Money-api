@@ -16,9 +16,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "typeorm:generate": "wrap () { yarn typeorm:generate $* $* | cat; }; wrap",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "typeorm:main": "node -r tsconfig-paths/register -r ts-node/register ./node_modules/typeorm/cli.js -d db-config.ts",
+    "typeorm:main:generate": "sh -c 'yarn typeorm:main migration:generate migrations/${0}'",
+    "typeorm:generate": "wrap () { yarn typeorm:main:generate $* | cat; }; wrap",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "start:prod": "yarn build && yarn typeorm:main migration:run && yarn start"
   },
   "dependencies": {
     "@bull-board/express": "^4.9.0",

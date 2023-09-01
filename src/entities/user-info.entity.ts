@@ -50,10 +50,10 @@ export class UserInfo {
   user: User;
 
   @Field(() => GraphQLISODateTime)
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
   @Field(() => GraphQLISODateTime)
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

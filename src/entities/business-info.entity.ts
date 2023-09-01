@@ -45,10 +45,10 @@ export class BusinessInfo {
   user: User;
 
   @Field(() => GraphQLISODateTime)
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
   @Field(() => GraphQLISODateTime)
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

@@ -1,13 +1,14 @@
-import { config } from 'dotenv';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { DataSource } from 'typeorm';
+import { config } from 'dotenv';
+require('typeorm');
 
 config({
   path: process.env.SECRET_PATH || process.env.ENV_FILE || '.env',
   override: true,
 });
 
-let entities = [process.cwd() + '/src/**/*.entity{.ts,.js}'];
+let entities = [process.cwd() + '/src/entities/*.entity{.ts,.js}'];
 let migrations = [process.cwd() + '/migrations/*{.ts,.js}'];
 
 if (process.env.TYPEORM_COMPILED === 'true') {
@@ -16,19 +17,10 @@ if (process.env.TYPEORM_COMPILED === 'true') {
   migrations = [process.cwd() + '/dist/migrations/*.js'];
 }
 
-const dataSource = new DataSource({
+export default new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
   namingStrategy: new SnakeNamingStrategy(),
   entities: entities,
   migrations: migrations,
 });
-
-export const databaseProviders = [
-  {
-    provide: 'DATA_SOURCE',
-    useFactory: async () => {
-      return dataSource.initialize();
-    },
-  },
-];

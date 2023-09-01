@@ -60,11 +60,11 @@ export class User {
   businessInfo: BusinessInfo;
 
   @Field(() => GraphQLISODateTime)
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
   @Field(() => GraphQLISODateTime)
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   @Index()
   createdAt: Date;
 }
