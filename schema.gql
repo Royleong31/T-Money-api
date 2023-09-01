@@ -1,0 +1,23 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthPayload {
+  accessToken: String!
+  refreshToken: String!
+}
+
+type Query {
+  hello: String!
+}
+
+type Mutation {
+  registerBusiness(username: String!, email: String!, password: String!, firstName: String!, lastName: String!, dateOfBirth: String!, country: String!, postcode: String!, occupation: String!, businessName: String!, uen: String!, businessCountry: String!, businessPostcode: String!, businessAddress: String!): AuthPayload!
+  registerIndividual(username: String!, email: String!, password: String!, firstName: String!, lastName: String!, dateOfBirth: String!, country: String!, postcode: String!, occupation: String!): AuthPayload!
+  login(usernameOrEmail: String!, password: String!, accountType: AccountType!): AuthPayload!
+}
+
+enum AccountType {
+  INDIVIDUAL
+  BUSINESS
+}
