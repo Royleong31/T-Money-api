@@ -6,10 +6,8 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
-  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { UserInfo } from './user-info.entity';
