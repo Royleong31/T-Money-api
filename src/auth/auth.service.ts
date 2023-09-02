@@ -13,6 +13,11 @@ import dayjs from 'dayjs';
 import { compare, hash } from 'bcrypt';
 import { DatabaseService } from 'src/database/database.service';
 
+interface JWTPayload {
+  userId: string;
+  createdAt: string;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -20,6 +25,22 @@ export class AuthService {
     @Inject(LOGIN_JWT_PROVIDER)
     private readonly loginTokenJwtService: JwtService,
   ) {}
+
+  async getUserFromAuthToken(accessToken: string): Promise<User> {
+    try {
+      const payload: JWTPayload = await this.loginTokenJwtService.verifyAsync(
+        accessToken,
+      );
+
+      const user = await this.databaseService.userRepository.findOneBy({
+        id: payload.userId,
+      });
+
+      return user;
+    } catch (error) {
+      return null;
+    }
+  }
 
   async registerBusiness(data: RegisterBusinessArgs): Promise<AuthPayload> {
     const user = await this.databaseService.dataSource.transaction(
@@ -66,10 +87,6 @@ export class AuthService {
         });
         await manager.save(businessInfo);
 
-        console.log(user);
-        console.log(userInfo);
-        console.log(businessInfo);
-
         return user;
       },
     );
@@ -87,15 +104,11 @@ export class AuthService {
           this.databaseService.userInfoRepository,
         );
 
-        const businessInfoRepository = manager.withRepository(
-          this.databaseService.businessInfoRepository,
-        );
-
         const user = userRepository.create({
           username: data.username,
           email: data.email,
           password: await hash(data.password, 10),
-          accountType: AccountType.BUSINESS,
+          accountType: AccountType.INDIVIDUAL,
           otpSecret: Math.round(Math.random() * 10 ** 16).toString(16),
         });
 
@@ -138,6 +151,6 @@ export class AuthService {
     return this.loginTokenJwtService.signAsync({
       userId,
       createdAt: dayjs().toISOString(),
-    });
+    } as JWTPayload);
   }
 }

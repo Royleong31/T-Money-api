@@ -25,7 +25,6 @@ export class UserInfo {
   @Column()
   lastName: string;
 
-  // TODO: Add validation for dateOfBirth. Needs to be in the past and in the format of DD-MM-YYYY format
   @Field(() => String)
   @Column()
   dateOfBirth: string;

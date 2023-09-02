@@ -10,7 +10,7 @@ export const LOGIN_JWT_PROVIDER = 'LoginTokenJwtService';
         secret: process.env.JWT_LOGIN_TOKEN_SECRET_KEY,
         issuer: 't-money',
         signOptions: {
-          expiresIn: '1h',
+          expiresIn: '7d',
           algorithm: 'HS256',
         },
         verifyOptions: {

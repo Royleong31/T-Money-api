@@ -10,6 +10,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
 
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
+import { UserModule } from './user/user.module';
 // import { QueuesModule } from './queues/queues.module';
 
 @Module({
@@ -39,6 +40,7 @@ import { DatabaseModule } from './database/database.module';
     // }),
 
     // QueuesModule,
+    UserModule,
   ],
   controllers: [AppController],
 })

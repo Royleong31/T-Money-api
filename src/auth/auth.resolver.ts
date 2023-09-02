@@ -4,7 +4,6 @@ import { AuthPayload } from './payload/auth.payload';
 import { AuthService } from './auth.service';
 import { RegisterIndividualArgs } from './args/register-individual.args';
 import { LoginArgs } from './args/login.args';
-import { ValidationPipe } from '@nestjs/common';
 
 @Resolver()
 export class AuthResolver {

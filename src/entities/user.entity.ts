@@ -26,6 +26,7 @@ export class User {
 
   @Column({ unique: true })
   @Index()
+  @Field()
   username: string;
 
   @Column()
@@ -37,17 +38,17 @@ export class User {
 
   // These 2 fields are used for email verification, and are not used as of now
   @Field(() => GraphQLISODateTime, { nullable: true })
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'timestamptz' })
   emailVerificationSentAt?: Date;
 
-  @Field(() => GraphQLISODateTime, { nullable: true })
-  @Column({ nullable: true, default: false })
+  @Field(() => Boolean)
+  @Column({ default: false })
   emailVerified: boolean;
 
   @Column({ default: 0 })
   otpCounter: number;
 
-  @Column({ nullable: false })
+  @Column()
   otpSecret: string;
 
   @Column({ type: 'int', default: 0 })
@@ -61,9 +62,11 @@ export class User {
   accountType: AccountType;
 
   @OneToOne(() => UserInfo, (userInfo) => userInfo.user)
+  @Field(() => UserInfo)
   userInfo: UserInfo;
 
   @OneToOne(() => BusinessInfo, (businessInfo) => businessInfo.user)
+  @Field(() => BusinessInfo)
   businessInfo: BusinessInfo;
 
   @Field(() => GraphQLISODateTime)
