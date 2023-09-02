@@ -1,11 +1,15 @@
 import { Field, GraphQLISODateTime, ObjectType } from '@nestjs/graphql';
 import { AccountType } from 'src/auth/enums/accountType.enum';
 import { LowerCaseTransformer } from 'src/transformers/lowercase.transformer';
+import { hash } from 'bcrypt';
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -37,20 +41,23 @@ export class User {
   emailVerificationSentAt?: Date;
 
   @Field(() => GraphQLISODateTime, { nullable: true })
-  @Column({ nullable: true })
+  @Column({ nullable: true, default: false })
   emailVerified: boolean;
 
   @Column({ default: 0 })
   otpCounter: number;
 
-  @Column()
-  otpSecret: string = Math.round(Math.random() * 10 ** 16).toString(16);
+  @Column({ nullable: false })
+  otpSecret: string;
 
   @Column({ type: 'int', default: 0 })
   failedOtpAttempts: number;
 
+  @Column({
+    type: 'enum',
+    enum: AccountType,
+  })
   @Field(() => AccountType)
-  @Column()
   accountType: AccountType;
 
   @OneToOne(() => UserInfo, (userInfo) => userInfo.userId)

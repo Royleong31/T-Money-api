@@ -4,6 +4,17 @@ import { BusinessInfo } from '../entities/business-info.entity';
 import { User } from '../entities/user.entity';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { UserInfo } from 'src/entities/user-info.entity';
+import { DatabaseService } from './database.service';
+import { TypeOrmExModule } from 'src/typeorm/TypeOrmEx.module';
+import { UserRepository } from 'src/repositories/user.repository';
+import { UserInfoRepository } from 'src/repositories/user-info.repository';
+import { BusinessInfoRepository } from 'src/repositories/business-info.repository';
+
+const typeormEntities = TypeOrmModule.forFeature([
+  User,
+  BusinessInfo,
+  UserInfo,
+]);
 
 @Module({
   imports: [
@@ -17,6 +28,14 @@ import { UserInfo } from 'src/entities/user-info.entity';
         timezone: 'Z',
       }),
     }),
+    typeormEntities,
+    TypeOrmExModule.forCustomRepository([
+      UserRepository,
+      UserInfoRepository,
+      BusinessInfoRepository,
+    ]),
   ],
+  providers: [DatabaseService],
+  exports: [DatabaseService],
 })
 export class DatabaseModule {}

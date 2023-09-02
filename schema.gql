@@ -4,7 +4,6 @@
 
 type AuthPayload {
   accessToken: String!
-  refreshToken: String!
 }
 
 type Query {
