@@ -1,15 +1,11 @@
 import { Field, GraphQLISODateTime, ObjectType } from '@nestjs/graphql';
 import { AccountType } from 'src/auth/enums/accountType.enum';
 import { LowerCaseTransformer } from 'src/transformers/lowercase.transformer';
-import { hash } from 'bcrypt';
 import {
-  BeforeInsert,
-  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,

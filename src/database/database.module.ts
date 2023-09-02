@@ -9,12 +9,10 @@ import { TypeOrmExModule } from 'src/typeorm/TypeOrmEx.module';
 import { UserRepository } from 'src/repositories/user.repository';
 import { UserInfoRepository } from 'src/repositories/user-info.repository';
 import { BusinessInfoRepository } from 'src/repositories/business-info.repository';
-
-const typeormEntities = TypeOrmModule.forFeature([
-  User,
-  BusinessInfo,
-  UserInfo,
-]);
+import { PayPalDeposit } from 'src/entities/paypal-deposit.entity';
+import { PayPalDepositRepository } from 'src/repositories/paypal-deposit.repository';
+import { PayPalWithdraw } from 'src/entities/paypal-withdraw.entity';
+import { PayPalWithdrawRepository } from 'src/repositories/paypal-withdraw.repository';
 
 @Module({
   imports: [
@@ -24,15 +22,16 @@ const typeormEntities = TypeOrmModule.forFeature([
         type: 'postgres',
         namingStrategy: new SnakeNamingStrategy(),
         url: process.env.DATABASE_URL,
-        entities: [User, BusinessInfo, UserInfo],
+        entities: [User, BusinessInfo, UserInfo, PayPalDeposit, PayPalWithdraw],
         timezone: 'Z',
       }),
     }),
-    typeormEntities,
     TypeOrmExModule.forCustomRepository([
       UserRepository,
       UserInfoRepository,
       BusinessInfoRepository,
+      PayPalDepositRepository,
+      PayPalWithdrawRepository,
     ]),
   ],
   providers: [DatabaseService],
