@@ -60,10 +60,10 @@ export class User {
   @Field(() => AccountType)
   accountType: AccountType;
 
-  @OneToOne(() => UserInfo, (userInfo) => userInfo.userId)
+  @OneToOne(() => UserInfo, (userInfo) => userInfo.user)
   userInfo: UserInfo;
 
-  @OneToOne(() => BusinessInfo, (businessInfo) => businessInfo.userId)
+  @OneToOne(() => BusinessInfo, (businessInfo) => businessInfo.user)
   businessInfo: BusinessInfo;
 
   @Field(() => GraphQLISODateTime)

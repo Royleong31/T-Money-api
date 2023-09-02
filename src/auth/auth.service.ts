@@ -127,26 +127,6 @@ export class AuthService {
       ],
     });
 
-    console.log(
-      await this.databaseService.userRepository.findOne({
-        where: {
-          username: data.usernameOrEmail,
-        },
-        relations: {
-          businessInfo: true,
-        },
-      }),
-    );
-
-    // console.log(
-    //   this.databaseService.userRepository
-    //     .createQueryBuilder('userInfo')
-    //     .select('userInfo.user_id')
-    //     .leftJoin('userInfo.user', 'user')
-    //     // .innerJoin('userInfo.user', 'user')
-    //     .getSql(),
-    // );
-
     if (!user || !(await compare(data.password, user.password))) {
       throw new BadRequestException('Invalid username or password');
     }
