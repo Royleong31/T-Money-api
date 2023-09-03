@@ -48,6 +48,44 @@ type BusinessInfo {
   createdAt: DateTime!
 }
 
+type PayPalDeposit {
+  id: String!
+  paypalCheckoutId: String
+  currency: Currency!
+  amount: Float!
+  userId: String!
+  user: User!
+  fees: Float
+  status: PayPalStatus!
+  updatedAt: DateTime!
+  createdAt: DateTime!
+}
+
+enum Currency {
+  USD
+  SGD
+}
+
+enum PayPalStatus {
+  BEFORE_REQUEST
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+type PayPalWithdraw {
+  id: String!
+  paypalPaymentId: String
+  currency: Currency!
+  amount: Float!
+  userId: String!
+  user: User!
+  status: PayPalStatus!
+  fees: Float
+  updatedAt: DateTime!
+  createdAt: DateTime!
+}
+
 type AuthPayload {
   accessToken: String!
 }
@@ -61,4 +99,7 @@ type Mutation {
   registerBusiness(username: String!, email: String!, password: String!, firstName: String!, lastName: String!, dateOfBirth: String!, country: String!, postcode: String!, occupation: String!, businessName: String!, uen: String!, businessCountry: String!, businessPostcode: String!, businessAddress: String!): AuthPayload!
   registerIndividual(username: String!, email: String!, password: String!, firstName: String!, lastName: String!, dateOfBirth: String!, country: String!, postcode: String!, occupation: String!): AuthPayload!
   login(usernameOrEmail: String!, password: String!, accountType: AccountType!): AuthPayload!
+  requestDeposit(amount: Float!, currency: Currency!): PayPalDeposit!
+  confirmDeposit(depositId: String!): PayPalDeposit!
+  withdraw(amount: Float!, currency: Currency!): PayPalWithdraw!
 }

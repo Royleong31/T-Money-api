@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { Currency } from 'src/enums/currency.enum';
+import { PayPalStatus } from 'src/enums/paypal-status.enum';
 
 @ObjectType()
 @Entity()
@@ -20,9 +21,9 @@ export class PayPalDeposit {
   id: string; // Used as idempotent id in paypal checkout, in the Paypal-Request-Id header
 
   @Index()
-  @Field(() => String)
-  @Column()
-  paypalCheckoutId: string; // checkout id from paypal, used for querying for the status of the checkout payment
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true })
+  paypalCheckoutId?: string; // checkout id from paypal, used for querying for the status of the checkout payment
 
   @Field(() => Currency)
   @Column()
@@ -43,12 +44,16 @@ export class PayPalDeposit {
   user: User;
 
   // fee paid by us to paypal
-  @Field(() => String)
+  @Field(() => Number, { nullable: true })
+  @Column({ type: 'numeric', nullable: true })
+  fees: number;
+
+  @Field(() => PayPalStatus)
   @Column()
-  fees: string;
+  status: PayPalStatus;
 
   @Field(() => GraphQLISODateTime)
-  @UpdateDateColumn({ type: 'timestamptz' })
+  @UpdateDateColumn({ type: 'timestamptz' }) // TODO: Store in UTC
   updatedAt: Date;
 
   @Field(() => GraphQLISODateTime)

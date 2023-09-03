@@ -11,6 +11,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { UserModule } from './user/user.module';
+import { PaypalModule } from './paypal/paypal.module';
 // import { QueuesModule } from './queues/queues.module';
 
 @Module({
@@ -41,6 +42,7 @@ import { UserModule } from './user/user.module';
 
     // QueuesModule,
     UserModule,
+    PaypalModule,
   ],
   controllers: [AppController],
 })
