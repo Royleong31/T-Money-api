@@ -28,9 +28,9 @@ export class MerchantPayment {
   @Column()
   orderId: string; // idempotent id from merchant
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   @Index()
-  @Column()
+  @Column({ nullable: true })
   customerId: string;
 
   @OneToOne(() => User)

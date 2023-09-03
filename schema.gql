@@ -92,6 +92,24 @@ type PayPalWithdraw {
   createdAt: DateTime!
 }
 
+type MerchantPayment {
+  id: String!
+  orderId: String!
+  customerId: String
+  merchantId: String!
+  amount: Float!
+  currency: Currency!
+  merchantPaymentStatus: MerchantPaymentStatus!
+  updatedAt: DateTime!
+  createdAt: DateTime!
+}
+
+enum MerchantPaymentStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+}
+
 type InternalTransfer {
   id: String!
   senderId: String!
@@ -110,6 +128,7 @@ type AuthPayload {
 type Query {
   hello: String!
   me: User!
+  merchantGetQRDetails(id: String!): MerchantPayment!
 }
 
 type Mutation {
@@ -119,5 +138,7 @@ type Mutation {
   requestDeposit(amount: Float!, currency: Currency!): PayPalDeposit!
   confirmDeposit(paypalCheckoutId: String!): PayPalDeposit!
   requestWithdraw(amount: Float!, currency: Currency!, paypalEmail: String!): PayPalWithdraw!
+  merchantRequestQR(orderId: String!, amount: Float!, currency: Currency!): MerchantPayment!
+  merchantPayQR(id: String!): MerchantPayment!
   makeInternalTransfer(amount: Float!, currency: Currency!, toUsername: String!, note: String!): InternalTransfer!
 }

@@ -26,11 +26,11 @@ import { InternalTransferModule } from './internalTransfer/internal-transfer.mod
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     AuthModule,
-
     UserModule,
     PaypalModule,
     MerchantModule,
     InternalTransferModule,
+    MerchantModule,
   ],
   controllers: [AppController],
 })
