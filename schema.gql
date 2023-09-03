@@ -101,5 +101,5 @@ type Mutation {
   login(usernameOrEmail: String!, password: String!, accountType: AccountType!): AuthPayload!
   requestDeposit(amount: Float!, currency: Currency!): PayPalDeposit!
   confirmDeposit(paypalCheckoutId: String!): PayPalDeposit!
-  withdraw(amount: Float!, currency: Currency!): PayPalWithdraw!
+  requestWithdraw(amount: Float!, currency: Currency!, paypalEmail: String!): PayPalWithdraw!
 }

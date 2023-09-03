@@ -42,11 +42,11 @@ export class PayPalResolver {
   // send the money to the user's paypal account via paypal payment from our business account
   @Auth()
   @Mutation(() => PayPalWithdraw)
-  withdraw(
+  requestWithdraw(
     @RequestUser() user: User,
     @Args({ type: () => WithdrawArgs })
     data: WithdrawArgs,
   ): Promise<PayPalWithdraw> {
-    return this.paypalService.withdraw(user, data);
+    return this.paypalService.requestWithdraw(user, data);
   }
 }

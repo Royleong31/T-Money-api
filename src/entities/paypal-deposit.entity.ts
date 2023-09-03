@@ -12,6 +12,7 @@ import {
 import { User } from './user.entity';
 import { Currency } from 'src/enums/currency.enum';
 import { PayPalStatus } from 'src/enums/paypal-status.enum';
+import { IsPositive } from 'class-validator';
 
 @ObjectType()
 @Entity()
@@ -31,6 +32,7 @@ export class PayPalDeposit {
 
   @Field(() => Number)
   @Column({ type: 'numeric' })
+  @IsPositive()
   amount: number;
 
   @Field(() => String)
