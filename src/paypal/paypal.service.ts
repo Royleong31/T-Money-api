@@ -196,6 +196,10 @@ export class PayPalService {
       throw new BadRequestException('Paypal deposit is not confirmed');
     }
 
+    const fees =
+      paypalResponse.data.purchase_units[0].payments.captures[0]
+        .seller_receivable_breakdown.net_amount.value;
+
     const paypalDeposit = await this.databaseService.dataSource.transaction(
       async (manager) => {
         const paypalDepositRepository = manager.getRepository(PayPalDeposit);
@@ -210,6 +214,7 @@ export class PayPalService {
         }
 
         deposit.status = PayPalStatus.COMPLETED;
+        deposit.fees = Number(fees);
 
         const updateDeposit = await paypalDepositRepository.save(deposit);
 

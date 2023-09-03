@@ -1,0 +1,14 @@
+import { registerEnumType } from '@nestjs/graphql';
+
+export enum TransactionType {
+  DEPOSIT = 'DEPOSIT',
+  WITHDRAWAL = 'WITHDRAWAL',
+  INTERNAL_TRANSFER_SENT = 'INTERNAL_TRANSFER_SENT',
+  INTERNAL_TRANSFER_RECEIVED = 'INTERNAL_TRANSFER_RECEIVED',
+  MERCHANT_PAYMENT_RECEIVED = 'MERCHANT_PAYMENT_RECEIVED',
+  MERCHANT_PAYMENT_SENT = 'MERCHANT_PAYMENT_SENT',
+}
+
+registerEnumType(TransactionType, {
+  name: 'TransactionType',
+});

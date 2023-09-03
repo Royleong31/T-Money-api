@@ -6,6 +6,7 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -13,6 +14,7 @@ import { User } from './user.entity';
 import { Currency } from 'src/enums/currency.enum';
 import { PayPalStatus } from 'src/enums/paypal-status.enum';
 import { IsPositive } from 'class-validator';
+import { Transaction } from './transaction.entity';
 
 @ObjectType()
 @Entity()
@@ -44,6 +46,9 @@ export class PayPalDeposit {
   @ManyToOne(() => User)
   @JoinColumn()
   user: User;
+
+  @OneToOne(() => Transaction, (transaction) => transaction.paypalDeposit)
+  transaction: Transaction;
 
   // fee paid by us to paypal
   @Field(() => Number, { nullable: true })

@@ -13,6 +13,9 @@ import { PayPalDeposit } from 'src/entities/paypal-deposit.entity';
 import { PayPalDepositRepository } from 'src/repositories/paypal-deposit.repository';
 import { PayPalWithdraw } from 'src/entities/paypal-withdraw.entity';
 import { PayPalWithdrawRepository } from 'src/repositories/paypal-withdraw.repository';
+import { InternalTransfer } from 'src/entities/internal-transfer.entity';
+import { MerchantPayment } from 'src/entities/merchant-payment.entity';
+import { Transaction } from 'src/entities/transaction.entity';
 
 @Module({
   imports: [
@@ -22,7 +25,16 @@ import { PayPalWithdrawRepository } from 'src/repositories/paypal-withdraw.repos
         type: 'postgres',
         namingStrategy: new SnakeNamingStrategy(),
         url: process.env.DATABASE_URL,
-        entities: [User, BusinessInfo, UserInfo, PayPalDeposit, PayPalWithdraw],
+        entities: [
+          User,
+          BusinessInfo,
+          UserInfo,
+          PayPalDeposit,
+          PayPalWithdraw,
+          InternalTransfer,
+          MerchantPayment,
+          Transaction,
+        ],
         timezone: 'Z',
       }),
     }),
