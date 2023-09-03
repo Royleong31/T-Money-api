@@ -1,8 +1,6 @@
-// import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import Redis from 'ioredis';
 import { AppController } from './app.controller';
 import { GraphQLModule as NestGraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
@@ -12,7 +10,8 @@ import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { UserModule } from './user/user.module';
 import { PaypalModule } from './paypal/paypal.module';
-// import { QueuesModule } from './queues/queues.module';
+import { MerchantModule } from './merchant/merchant.module';
+import { InternalTransferModule } from './internalTransfer/internal-transfer.module';
 
 @Module({
   imports: [
@@ -28,21 +27,10 @@ import { PaypalModule } from './paypal/paypal.module';
     ScheduleModule.forRoot(),
     AuthModule,
 
-    // BullModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   useFactory: (configService: ConfigService) => ({
-    //     createClient: () =>
-    //       new Redis(configService.get('QUEUE_REDIS_URL'), {
-    //         maxRetriesPerRequest: null,
-    //         enableReadyCheck: false,
-    //       }),
-    //   }),
-    //   inject: [ConfigService],
-    // }),
-
-    // QueuesModule,
     UserModule,
     PaypalModule,
+    MerchantModule,
+    InternalTransferModule,
   ],
   controllers: [AppController],
 })

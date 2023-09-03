@@ -48,15 +48,15 @@ type BusinessInfo {
   createdAt: DateTime!
 }
 
-type PayPalWithdraw {
+type PayPalDeposit {
   id: String!
-  paypalPaymentId: String
+  paypalCheckoutId: String
   currency: Currency!
   amount: Float!
   userId: String!
   user: User!
-  status: PayPalStatus!
   fees: Float
+  status: PayPalStatus!
   updatedAt: DateTime!
   createdAt: DateTime!
 }
@@ -73,15 +73,15 @@ enum PayPalStatus {
   FAILED
 }
 
-type PayPalDeposit {
+type PayPalWithdraw {
   id: String!
-  paypalCheckoutId: String
+  paypalPaymentId: String
   currency: Currency!
   amount: Float!
   userId: String!
   user: User!
-  fees: Float
   status: PayPalStatus!
+  fees: Float
   updatedAt: DateTime!
   createdAt: DateTime!
 }

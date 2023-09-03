@@ -16,6 +16,9 @@ import { PayPalWithdrawRepository } from 'src/repositories/paypal-withdraw.repos
 import { InternalTransfer } from 'src/entities/internal-transfer.entity';
 import { MerchantPayment } from 'src/entities/merchant-payment.entity';
 import { Transaction } from 'src/entities/transaction.entity';
+import { TransactionRepository } from 'src/repositories/transaction.repository';
+import { InternalTransferRepository } from 'src/repositories/internal-transfer.repository';
+import { MerchantPaymentRepository } from 'src/repositories/merchant-payment.repository';
 
 @Module({
   imports: [
@@ -44,6 +47,9 @@ import { Transaction } from 'src/entities/transaction.entity';
       BusinessInfoRepository,
       PayPalDepositRepository,
       PayPalWithdrawRepository,
+      InternalTransferRepository,
+      MerchantPaymentRepository,
+      TransactionRepository,
     ]),
   ],
   providers: [DatabaseService],
