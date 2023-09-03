@@ -100,6 +100,6 @@ type Mutation {
   registerIndividual(username: String!, email: String!, password: String!, firstName: String!, lastName: String!, dateOfBirth: String!, country: String!, postcode: String!, occupation: String!): AuthPayload!
   login(usernameOrEmail: String!, password: String!, accountType: AccountType!): AuthPayload!
   requestDeposit(amount: Float!, currency: Currency!): PayPalDeposit!
-  confirmDeposit(depositId: String!): PayPalDeposit!
+  confirmDeposit(paypalCheckoutId: String!): PayPalDeposit!
   withdraw(amount: Float!, currency: Currency!): PayPalWithdraw!
 }

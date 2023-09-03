@@ -25,7 +25,7 @@ export class PayPalResolver {
     @Args({ type: () => RequestDepositArgs })
     data: RequestDepositArgs,
   ): Promise<PayPalDeposit> {
-    return this.paypalService.createDeposit(user, data);
+    return this.paypalService.requestDeposit(user, data);
   }
 
   // used upon successful paypal payment. Check against paypal to see if the payment is valid

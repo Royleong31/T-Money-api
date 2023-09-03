@@ -50,10 +50,47 @@ export class PayPalService {
     user: User,
     data: ConfirmDepositArgs,
   ): Promise<PayPalDeposit> {
-    throw new Error('Method not implemented.');
+    const config = {
+      method: 'get',
+      url: `${PAYPAL_API_URL}/v2/checkout/orders/${data.paypalCheckoutId}`,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+    const paypalResponse = await this.makeAuthPaypalRequest(config);
+    if (paypalResponse.data.status !== 'COMPLETED') {
+      throw new BadRequestException('Paypal deposit is not confirmed');
+    }
+
+    const paypalDeposit = await this.databaseService.dataSource.transaction(
+      async (manager) => {
+        const paypalDepositRepository = manager.getRepository(PayPalDeposit);
+        // TODO: Simultaneously create a new transaction to credit this user
+        // const transactionRepository = manager.getRepository(Transaction);
+        const deposit = await paypalDepositRepository.findOne({
+          where: { paypalCheckoutId: data.paypalCheckoutId },
+        });
+
+        if (!deposit) {
+          throw new BadRequestException('Paypal deposit does not exist');
+        }
+
+        console.log('current deposit');
+        console.log(deposit);
+        deposit.status = PayPalStatus.COMPLETED;
+
+        const updateDeposit = await paypalDepositRepository.save(deposit);
+        console.log('after deposit');
+        console.log(updateDeposit);
+
+        return updateDeposit;
+      },
+    );
+
+    return paypalDeposit;
   }
 
-  async createDeposit(
+  async requestDeposit(
     user: User,
     data: RequestDepositArgs,
   ): Promise<PayPalDeposit> {
@@ -78,8 +115,8 @@ export class PayPalService {
             custom_id: deposit.id,
             description: 'Deposit into T Money',
             amount: {
-              currency_code: data.currency,
-              value: data.amount.toFixed(2),
+              currency_code: deposit.currency,
+              value: deposit.amount.toFixed(2),
             },
           },
         ],
@@ -108,14 +145,10 @@ export class PayPalService {
         },
         data: body,
       };
-      const paypalResponse = await this.makePaypalRequest(config);
+
+      const paypalResponse = await this.makeAuthPaypalRequest(config);
 
       const paypalCheckoutId = paypalResponse.data.id;
-
-      await this.databaseService.paypalDepositRepository.update(
-        { id: deposit.id },
-        { paypalCheckoutId, status: PayPalStatus.PENDING },
-      );
 
       const updateDeposit = await this.databaseService.paypalDepositRepository
         .createQueryBuilder('paypalDeposit')
@@ -141,7 +174,7 @@ export class PayPalService {
   }
 
   // if the access token is invalid, get a new one and retry the request, and cache the new access token
-  async makePaypalRequest(config: AxiosRequestConfig) {
+  async makeAuthPaypalRequest(config: AxiosRequestConfig) {
     try {
       const accessToken = await this.getPayPalAuthToken();
       const newConfig = {
@@ -155,12 +188,12 @@ export class PayPalService {
       return paypalResponse;
     } catch (error) {
       if (error.response.status === 401) {
-        const accessToken = await this.fetchPaypalAccessToken();
+        const newAccessToken = await this.fetchPaypalAccessToken();
         const newConfig = {
           ...config,
           headers: {
             ...config.headers,
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${newAccessToken}`,
           },
         };
 
