@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { UserInfo } from './user-info.entity';
 import { BusinessInfo } from './business-info.entity';
+import { Balance } from 'src/objectTypes/balance';
 
 @ObjectType()
 @Entity()
@@ -62,8 +63,12 @@ export class User {
   userInfo: UserInfo;
 
   @OneToOne(() => BusinessInfo, (businessInfo) => businessInfo.user)
-  @Field(() => BusinessInfo)
-  businessInfo: BusinessInfo;
+  @Field(() => BusinessInfo, { nullable: true })
+  businessInfo?: BusinessInfo;
+
+  // Calculated from transactions table
+  @Field(() => [Balance])
+  balances: Balance[];
 
   @Field(() => GraphQLISODateTime)
   @UpdateDateColumn({ type: 'timestamptz' })

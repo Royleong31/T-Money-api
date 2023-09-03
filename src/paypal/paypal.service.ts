@@ -11,6 +11,7 @@ import { HttpService } from '@nestjs/axios';
 import qs from 'qs';
 import dayjs from 'dayjs';
 import { AxiosRequestConfig } from 'axios';
+import { TransactionType } from 'src/enums/transaction-type.enum';
 
 const PAYPAL_API_URL = 'https://api-m.sandbox.paypal.com';
 
@@ -37,7 +38,6 @@ function camelCase(obj: Record<any, any>) {
   return newObj;
 }
 
-// TODO: Add Fees
 @Injectable()
 export class PayPalService {
   authTokenDetails: { token: string; expiresAt: dayjs.Dayjs };
@@ -53,20 +53,56 @@ export class PayPalService {
     user: User,
     data: WithdrawArgs,
   ): Promise<PayPalWithdraw> {
-    let withdrawId: string = null;
-
     try {
-      // TODO: Do the locking and transaction in DB for transaction and user and paypal withdraw tables
+      const withdraw = await this.databaseService.dataSource.transaction(
+        async (manager) => {
+          // TODO: Explicit locking for user and currency
+          const transactionRepository = manager.withRepository(
+            this.databaseService.transactionRepository,
+          );
+          const paypalWithdrawRepository = manager.withRepository(
+            this.databaseService.paypalWithdrawRepository,
+          );
 
-      const withdraw = this.databaseService.paypalWithdrawRepository.create({
-        amount: +data.amount.toFixed(2),
-        currency: data.currency,
-        userId: user.id,
-        status: PayPalStatus.BEFORE_REQUEST,
-        paypalPaymentId: null, // null until response from Paypal
-      });
-      await this.databaseService.paypalWithdrawRepository.save(withdraw);
-      withdrawId = withdraw.id;
+          // TODO: Create a function for this
+          const userBalance = await transactionRepository.getUserBalance(
+            user.id,
+            data.currency,
+          );
+
+          if (userBalance < data.amount) {
+            throw new BadRequestException('Insufficient balance');
+          }
+
+          const withdraw = paypalWithdrawRepository.create({
+            amount: Number(data.amount.toFixed(2)),
+            currency: data.currency,
+            userId: user.id,
+            status: PayPalStatus.BEFORE_REQUEST,
+            paypalPaymentId: null, // null until response from Paypal
+          });
+
+          await manager.save(withdraw);
+
+          const withdrawalTransaction = transactionRepository.create({
+            userId: user.id,
+            currency: data.currency,
+            amount: -data.amount,
+            type: TransactionType.WITHDRAWAL,
+            paypalWithdrawalId: withdraw.id,
+          });
+
+          await manager.save(withdrawalTransaction);
+
+          return withdraw;
+        },
+      );
+
+      if (!withdraw) {
+        throw new BadRequestException('Unable to create PayPal deposit');
+      }
+
+      // TODO: Steps below should be in a background queue for performance and fault tolerance in the event that the part below fails, since the withdrawal is already created
 
       const body = JSON.stringify({
         items: [
@@ -112,7 +148,7 @@ export class PayPalService {
         await this.databaseService.paypalWithdrawRepository
           .createQueryBuilder('paypalWithdraw')
           .update({ paypalPaymentId, status: PayPalStatus.PENDING })
-          .where({ id: withdrawId })
+          .where({ id: withdraw.id })
           .returning('*')
           .execute();
 
@@ -120,18 +156,11 @@ export class PayPalService {
         ...updateWithdrawal.raw[0],
       }) as PayPalWithdraw;
 
-      // no await here as it's a background job
+      // TODO: Move to a separate background job to confirm the withdrawal since it takes a while
       this.confirmWithdrawal(paypalWithdraw);
       return paypalWithdraw;
     } catch (error) {
       console.error(error);
-      if (withdrawId) {
-        // does not throw error if unable to delete
-        // This cleans up the withdraw table if the withdraw is not valid. I don't want to use a transaction here as the async request to PayPal may take a long time
-        this.databaseService.paypalWithdrawRepository.delete({
-          id: withdrawId,
-        });
-      }
 
       throw new BadRequestException('Unable to create PayPal deposit');
     }
@@ -150,7 +179,7 @@ export class PayPalService {
       };
 
       for (let i = 0; i < 5; i++) {
-        await sleep(5000);
+        await sleep(5000); // TODO: Change to exponential backoff
 
         const response = await this.makeAuthPaypalRequest(getPayoutStatus);
         const status = response.data.batch_header.batch_status;
@@ -160,20 +189,54 @@ export class PayPalService {
         } else if (status === 'SUCCESS') {
           const fees = Number(response.data.batch_header.fees.value);
 
-          // TODO: Update user balance and set the status in the withdraw table to completed in a transaction
-          await this.databaseService.paypalWithdrawRepository
-            .createQueryBuilder('paypalWithdraw')
-            .update({ status: PayPalStatus.COMPLETED, fees })
-            .where({ id: withdraw.id })
-            .returning('*')
-            .execute();
-          return;
+          const confirmWithdrawal =
+            await this.databaseService.paypalWithdrawRepository
+              .createQueryBuilder('paypalWithdraw')
+              .update({ status: PayPalStatus.COMPLETED, fees })
+              .where({ id: withdraw.id })
+              .returning('*')
+              .execute();
+
+          return confirmWithdrawal.raw[0] as PayPalWithdraw;
         } else if (status === 'DENIED' || status === 'CANCELED') {
           // TODO: Set the status of the withdraw table to failed
-          return;
+          const failedWithdrawal =
+            await this.databaseService.dataSource.transaction(
+              async (manager) => {
+                const transactionRepository = manager.withRepository(
+                  this.databaseService.transactionRepository,
+                );
+                const paypalWithdrawRepository = manager.withRepository(
+                  this.databaseService.paypalWithdrawRepository,
+                );
+
+                const withdrawResult = await paypalWithdrawRepository
+                  .createQueryBuilder('paypalWithdraw')
+                  .update({ status: PayPalStatus.FAILED, fees: 0 })
+                  .where({ id: withdraw.id })
+                  .returning('*')
+                  .execute();
+
+                const paypalWithdraw: PayPalWithdraw = withdrawResult.raw[0];
+
+                const withdrawTransaction = transactionRepository.create({
+                  userId: withdraw.userId,
+                  currency: withdraw.currency,
+                  amount: withdraw.amount,
+                  type: TransactionType.WITHDRAWAL_REFUND,
+                  paypalWithdrawalId: paypalWithdraw.id,
+                });
+
+                await manager.save(withdrawTransaction);
+
+                return paypalWithdraw;
+              },
+            );
+
+          return failedWithdrawal;
         }
+
         // Should never reach here as the status should be one of the above
-        return;
       }
     } catch (error) {
       console.error(error);
@@ -184,29 +247,57 @@ export class PayPalService {
     user: User,
     data: ConfirmDepositArgs,
   ): Promise<PayPalDeposit> {
-    const config = {
+    const getPaypalInfoConfig = {
       method: 'get',
       url: `${PAYPAL_API_URL}/v2/checkout/orders/${data.paypalCheckoutId}`,
       headers: {
         'Content-Type': 'application/json',
       },
     };
-    const paypalResponse = await this.makeAuthPaypalRequest(config);
-    if (paypalResponse.data.status !== 'COMPLETED') {
+    let getDataFromPaypal = await this.makeAuthPaypalRequest(
+      getPaypalInfoConfig,
+    );
+    const paypalStatus = getDataFromPaypal.data.status;
+    console.log(paypalStatus);
+    if (paypalStatus === 'APPROVED') {
+      const captureConfig = {
+        method: 'post',
+        url: `${PAYPAL_API_URL}/v2/checkout/orders/${data.paypalCheckoutId}/capture`,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+
+      // TODO: Make this better
+      const paypalResponse = await this.makeAuthPaypalRequest(captureConfig);
+      if (paypalResponse.data.status !== 'COMPLETED') {
+        throw new BadRequestException('Paypal deposit is not confirmed');
+      }
+
+      getDataFromPaypal = await this.makeAuthPaypalRequest(getPaypalInfoConfig);
+    } else if (paypalStatus !== 'COMPLETED') {
       throw new BadRequestException('Paypal deposit is not confirmed');
     }
 
+    // Either completed or approved and then completed
+
     const fees =
-      paypalResponse.data.purchase_units[0].payments.captures[0]
+      getDataFromPaypal.data.purchase_units[0].payments.captures[0]
         .seller_receivable_breakdown.net_amount.value;
 
     const paypalDeposit = await this.databaseService.dataSource.transaction(
       async (manager) => {
         const paypalDepositRepository = manager.getRepository(PayPalDeposit);
+        const transactionRepository = manager.withRepository(
+          this.databaseService.transactionRepository,
+        );
+
         // TODO: Simultaneously create a new transaction to credit this user
-        // const transactionRepository = manager.getRepository(Transaction);
         const deposit = await paypalDepositRepository.findOne({
-          where: { paypalCheckoutId: data.paypalCheckoutId },
+          where: {
+            paypalCheckoutId: data.paypalCheckoutId,
+            status: PayPalStatus.PENDING,
+          },
         });
 
         if (!deposit) {
@@ -217,6 +308,16 @@ export class PayPalService {
         deposit.fees = Number(fees);
 
         const updateDeposit = await paypalDepositRepository.save(deposit);
+
+        const depositTransaction = transactionRepository.create({
+          userId: deposit.userId,
+          currency: deposit.currency,
+          amount: deposit.amount,
+          type: TransactionType.DEPOSIT,
+          paypalDepositId: deposit.id,
+        });
+
+        await manager.save(depositTransaction);
 
         return updateDeposit;
       },
@@ -289,6 +390,7 @@ export class PayPalService {
         .createQueryBuilder('paypalDeposit')
         .update({ paypalCheckoutId, status: PayPalStatus.PENDING })
         .where({ id: depositId })
+        .andWhere({ status: PayPalStatus.BEFORE_REQUEST })
         .returning('*')
         .execute();
 
@@ -298,7 +400,7 @@ export class PayPalService {
 
       return paypalDeposit;
     } catch (error) {
-      // Delete deposit if it exists as the deposit is not valid
+      // State changes in this funciton are not in a transaction as no balance changes are made. So even if something fails, the user can always try again without losing money
       if (depositId) {
         // does not throw error if unable to delete
         this.databaseService.paypalDepositRepository.delete({ id: depositId });
@@ -320,6 +422,7 @@ export class PayPalService {
         },
       };
       const paypalResponse = await this.httpService.axiosRef.request(newConfig);
+
       return paypalResponse;
     } catch (error) {
       if (error.response.status === 401) {
@@ -337,6 +440,7 @@ export class PayPalService {
         );
         return paypalResponse;
       }
+      return error;
     }
   }
 

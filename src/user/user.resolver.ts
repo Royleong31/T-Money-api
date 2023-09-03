@@ -7,6 +7,7 @@ import { RequestUser } from 'src/auth/decorators/request-user.decorator';
 import { UserInfo } from 'src/entities/user-info.entity';
 import { DatabaseService } from 'src/database/database.service';
 import { BusinessInfo } from 'src/entities/business-info.entity';
+import { Balance } from 'src/objectTypes/balance';
 
 @Resolver(() => User)
 export class UserResolver {
@@ -40,5 +41,13 @@ export class UserResolver {
 
     console.log(businessInfo);
     return businessInfo;
+  }
+
+  @ResolveField()
+  async balances(@Parent() user: User): Promise<Balance[]> {
+    const balances =
+      await this.databaseService.transactionRepository.getUserBalances(user.id);
+
+    return balances;
   }
 }

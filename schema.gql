@@ -19,6 +19,16 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type Balance {
+  amount: Float!
+  currency: Currency!
+}
+
+enum Currency {
+  USD
+  SGD
+}
+
 type User {
   id: String!
   username: String!
@@ -27,7 +37,8 @@ type User {
   emailVerified: Boolean!
   accountType: AccountType!
   userInfo: UserInfo!
-  businessInfo: BusinessInfo!
+  businessInfo: BusinessInfo
+  balances: [Balance!]!
   updatedAt: DateTime!
   createdAt: DateTime!
 }
@@ -61,11 +72,6 @@ type PayPalDeposit {
   createdAt: DateTime!
 }
 
-enum Currency {
-  USD
-  SGD
-}
-
 enum PayPalStatus {
   BEFORE_REQUEST
   PENDING
@@ -86,6 +92,17 @@ type PayPalWithdraw {
   createdAt: DateTime!
 }
 
+type InternalTransfer {
+  id: String!
+  senderId: String!
+  amount: Float!
+  currency: Currency!
+  receiverId: String!
+  note: String!
+  updatedAt: DateTime!
+  createdAt: DateTime!
+}
+
 type AuthPayload {
   accessToken: String!
 }
@@ -102,4 +119,5 @@ type Mutation {
   requestDeposit(amount: Float!, currency: Currency!): PayPalDeposit!
   confirmDeposit(paypalCheckoutId: String!): PayPalDeposit!
   requestWithdraw(amount: Float!, currency: Currency!, paypalEmail: String!): PayPalWithdraw!
+  makeInternalTransfer(amount: Float!, currency: Currency!, toUsername: String!, note: String!): InternalTransfer!
 }
