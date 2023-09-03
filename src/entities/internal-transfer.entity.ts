@@ -27,6 +27,7 @@ export class InternalTransfer {
 
   @ManyToOne(() => User)
   @JoinColumn()
+  @Field(() => User)
   sender: User; // from
 
   @Field(() => Number)
@@ -44,6 +45,7 @@ export class InternalTransfer {
 
   @ManyToOne(() => User)
   @JoinColumn()
+  @Field(() => User)
   receiver: User; // to
 
   @ManyToOne(() => Transaction, (transaction) => transaction.user)

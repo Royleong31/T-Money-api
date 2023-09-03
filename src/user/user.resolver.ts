@@ -1,4 +1,4 @@
-import { Query, Resolver, ResolveField, Parent } from '@nestjs/graphql';
+import { Query, Resolver, ResolveField, Parent, Args } from '@nestjs/graphql';
 
 import { User } from 'src/entities/user.entity';
 import { UserService } from './user.service';
@@ -8,6 +8,9 @@ import { UserInfo } from 'src/entities/user-info.entity';
 import { DatabaseService } from 'src/database/database.service';
 import { BusinessInfo } from 'src/entities/business-info.entity';
 import { Balance } from 'src/objectTypes/balance';
+import { TransactionSummaryArgs } from './args/transaction-summary.args';
+import { TransactionDetails } from 'src/objectTypes/transaction-details';
+import { TransactionSummary } from 'src/objectTypes/transaction-summary';
 
 @Resolver(() => User)
 export class UserResolver {
@@ -22,13 +25,31 @@ export class UserResolver {
     return user;
   }
 
+  @Query(() => TransactionDetails)
+  @Auth()
+  async transactions(
+    @RequestUser() user: User,
+
+    @Args({ type: () => TransactionSummaryArgs }) data: TransactionSummaryArgs,
+  ): Promise<TransactionDetails> {
+    return this.userService.getTransactions(user, data);
+  }
+
+  @Query(() => TransactionSummary)
+  @Auth()
+  async getTransactionSummary(
+    @RequestUser() user: User,
+    @Args({ type: () => TransactionSummaryArgs }) data: TransactionSummaryArgs,
+  ): Promise<TransactionSummary> {
+    return this.userService.getTransactionsSummary(user, data);
+  }
+
   @ResolveField()
   async userInfo(@Parent() user: User): Promise<UserInfo> {
     const userInfo = await this.databaseService.userInfoRepository.findOneBy({
       userId: user.id,
     });
 
-    console.log(userInfo);
     return userInfo;
   }
 

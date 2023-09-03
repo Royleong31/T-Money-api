@@ -35,6 +35,7 @@ export class MerchantPayment {
 
   @ManyToOne(() => User)
   @JoinColumn()
+  @Field(() => User, { nullable: true })
   customer: User; // from
 
   @Field(() => String)
@@ -44,6 +45,7 @@ export class MerchantPayment {
 
   @ManyToOne(() => User)
   @JoinColumn()
+  @Field(() => User, { nullable: true })
   merchant: User; // to
 
   @Field(() => Number)

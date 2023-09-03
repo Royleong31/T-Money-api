@@ -96,7 +96,9 @@ type MerchantPayment {
   id: String!
   orderId: String!
   customerId: String
+  customer: User
   merchantId: String!
+  merchant: User
   amount: Float!
   currency: Currency!
   merchantPaymentStatus: MerchantPaymentStatus!
@@ -110,12 +112,34 @@ enum MerchantPaymentStatus {
   EXPIRED
 }
 
+type Transaction {
+  id: String!
+  userId: String!
+  currency: Currency!
+  amount: Float!
+  type: TransactionType!
+  updatedAt: DateTime!
+  createdAt: DateTime!
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  INTERNAL_TRANSFER_SENT
+  INTERNAL_TRANSFER_RECEIVED
+  MERCHANT_PAYMENT_RECEIVED
+  MERCHANT_PAYMENT_SENT
+  WITHDRAWAL_REFUND
+}
+
 type InternalTransfer {
   id: String!
   senderId: String!
+  sender: User!
   amount: Float!
   currency: Currency!
   receiverId: String!
+  receiver: User!
   note: String!
   updatedAt: DateTime!
   createdAt: DateTime!
@@ -125,10 +149,23 @@ type AuthPayload {
   accessToken: String!
 }
 
+type TransactionDetails {
+  transactionsIn: [Transaction!]!
+  transactionsOut: [Transaction!]!
+}
+
+type TransactionSummary {
+  amountIn: Float!
+  amountOut: Float!
+}
+
 type Query {
   hello: String!
   me: User!
+  transactions(fromDate: DateTime!, toDate: DateTime!, currency: Currency!): TransactionDetails!
+  getTransactionSummary(fromDate: DateTime!, toDate: DateTime!, currency: Currency!): TransactionSummary!
   merchantGetQRDetails(id: String!): MerchantPayment!
+  getInternalTransfer(id: String!): InternalTransfer!
 }
 
 type Mutation {

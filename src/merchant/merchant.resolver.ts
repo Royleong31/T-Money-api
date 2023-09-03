@@ -1,4 +1,11 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Mutation,
+  Query,
+  Resolver,
+  ResolveField,
+  Parent,
+} from '@nestjs/graphql';
 import { MerchantService } from './merchant.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { RequestUser } from 'src/auth/decorators/request-user.decorator';
@@ -7,10 +14,23 @@ import { MerchantPayQRArgs } from './args/merchant-pay-qr.args';
 import { MerchantRequestQRArgs } from './args/merchant-request-qr.args';
 import { User } from 'src/entities/user.entity';
 import { MerchantPayment } from 'src/entities/merchant-payment.entity';
+import { DatabaseService } from 'src/database/database.service';
 
-@Resolver()
+@Resolver(() => MerchantPayment)
 export class MerchantResolver {
-  constructor(private readonly merchantService: MerchantService) {}
+  constructor(
+    private readonly merchantService: MerchantService,
+    private readonly databaseService: DatabaseService,
+  ) {}
+
+  @ResolveField()
+  async merchant(@Parent() merchantPayment: MerchantPayment): Promise<User> {
+    const user = await this.databaseService.userRepository.findOneBy({
+      id: merchantPayment.merchantId,
+    });
+
+    return user;
+  }
 
   @Auth()
   @Mutation(() => MerchantPayment)
@@ -41,4 +61,6 @@ export class MerchantResolver {
   ): Promise<MerchantPayment> {
     return this.merchantService.customerPayQR(user, data);
   }
+
+  // TODO: Resolve the user behind the payment
 }
