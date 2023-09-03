@@ -6,7 +6,6 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -26,7 +25,7 @@ export class InternalTransfer {
   @Column()
   senderId: string;
 
-  @OneToOne(() => User)
+  @ManyToOne(() => User)
   @JoinColumn()
   sender: User; // from
 
@@ -43,7 +42,7 @@ export class InternalTransfer {
   @Column()
   receiverId: string;
 
-  @OneToOne(() => User)
+  @ManyToOne(() => User)
   @JoinColumn()
   receiver: User; // to
 

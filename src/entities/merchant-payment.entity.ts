@@ -5,8 +5,8 @@ import {
   Entity,
   Index,
   JoinColumn,
+  ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   Unique,
   UpdateDateColumn,
@@ -33,7 +33,7 @@ export class MerchantPayment {
   @Column({ nullable: true })
   customerId: string;
 
-  @OneToOne(() => User)
+  @ManyToOne(() => User)
   @JoinColumn()
   customer: User; // from
 
@@ -42,7 +42,7 @@ export class MerchantPayment {
   @Column()
   merchantId: string;
 
-  @OneToOne(() => User)
+  @ManyToOne(() => User)
   @JoinColumn()
   merchant: User; // to
 
