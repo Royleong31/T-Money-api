@@ -166,10 +166,15 @@ type TransactionSummary {
 type Query {
   hello: String!
   me: User!
-  transactions(fromDate: DateTime!, toDate: DateTime!, currency: Currency!): TransactionDetails!
-  getTransactionSummary(fromDate: DateTime!, toDate: DateTime!, currency: Currency!): TransactionSummary!
+  transactions(fromDate: DateTime, toDate: DateTime, sortOrder: SortOrder! = DESC, currency: Currency!): TransactionDetails!
+  getTransactionSummary(fromDate: DateTime, toDate: DateTime, sortOrder: SortOrder! = DESC, currency: Currency!): TransactionSummary!
   merchantGetQRDetails(id: String!): MerchantPayment!
   getInternalTransfer(id: String!): InternalTransfer!
+}
+
+enum SortOrder {
+  ASC
+  DESC
 }
 
 type Mutation {
