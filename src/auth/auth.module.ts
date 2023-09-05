@@ -5,9 +5,10 @@ import { LoginTokenJwtModule } from 'src/jwt/login-token.jwt.module';
 import { DatabaseModule } from 'src/database/database.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './guard/auth.guard';
+import { SendgridModule } from 'src/sendgrid/sendgrid.module';
 
 @Module({
-  imports: [DatabaseModule, LoginTokenJwtModule],
+  imports: [DatabaseModule, LoginTokenJwtModule, SendgridModule],
   providers: [
     {
       provide: APP_GUARD,

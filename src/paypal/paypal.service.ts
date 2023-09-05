@@ -258,7 +258,7 @@ export class PayPalService {
       getPaypalInfoConfig,
     );
     const paypalStatus = getDataFromPaypal.data.status;
-    console.log(paypalStatus);
+
     if (paypalStatus === 'APPROVED') {
       const captureConfig = {
         method: 'post',

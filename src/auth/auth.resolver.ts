@@ -3,6 +3,8 @@ import { RegisterBusinessArgs } from './args/register-business.args';
 import { AuthPayload } from './payload/auth.payload';
 import { AuthService } from './auth.service';
 import { RegisterIndividualArgs } from './args/register-individual.args';
+import { LoginRequestArgs } from './args/loginRequest.args';
+import { LoginRequestPayload } from './payload/loginRequest.payload';
 import { LoginArgs } from './args/login.args';
 
 @Resolver()
@@ -28,6 +30,14 @@ export class AuthResolver {
     data: RegisterBusinessArgs,
   ): Promise<AuthPayload> {
     return this.authService.registerIndividual(data);
+  }
+
+  @Mutation(() => LoginRequestPayload)
+  loginRequest(
+    @Args({ type: () => LoginRequestArgs })
+    data: LoginRequestArgs,
+  ): Promise<LoginRequestPayload> {
+    return this.authService.loginRequest(data);
   }
 
   @Mutation(() => AuthPayload)

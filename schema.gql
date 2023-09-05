@@ -149,6 +149,10 @@ type AuthPayload {
   accessToken: String!
 }
 
+type LoginRequestPayload {
+  loginToken: String!
+}
+
 type TransactionDetails {
   transactionsIn: [Transaction!]!
   transactionsOut: [Transaction!]!
@@ -171,7 +175,8 @@ type Query {
 type Mutation {
   registerBusiness(username: String!, email: String!, password: String!, firstName: String!, lastName: String!, dateOfBirth: String!, country: String!, postcode: String!, occupation: String!, businessName: String!, uen: String!, businessCountry: String!, businessPostcode: String!, businessAddress: String!): AuthPayload!
   registerIndividual(username: String!, email: String!, password: String!, firstName: String!, lastName: String!, dateOfBirth: String!, country: String!, postcode: String!, occupation: String!): AuthPayload!
-  login(usernameOrEmail: String!, password: String!, accountType: AccountType!): AuthPayload!
+  loginRequest(usernameOrEmail: String!, password: String!, accountType: AccountType!): LoginRequestPayload!
+  login(loginToken: String!, otp: String!): AuthPayload!
   requestDeposit(amount: Float!, currency: Currency!): PayPalDeposit!
   confirmDeposit(paypalCheckoutId: String!): PayPalDeposit!
   requestWithdraw(amount: Float!, currency: Currency!, paypalEmail: String!): PayPalWithdraw!

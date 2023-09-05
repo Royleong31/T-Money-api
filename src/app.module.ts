@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { GraphQLModule as NestGraphQLModule } from '@nestjs/graphql';
@@ -12,6 +12,7 @@ import { UserModule } from './user/user.module';
 import { PaypalModule } from './paypal/paypal.module';
 import { MerchantModule } from './merchant/merchant.module';
 import { InternalTransferModule } from './internalTransfer/internal-transfer.module';
+import { SendgridModule } from './sendgrid/sendgrid.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { InternalTransferModule } from './internalTransfer/internal-transfer.mod
     MerchantModule,
     InternalTransferModule,
     MerchantModule,
+    SendgridModule,
   ],
   controllers: [AppController],
 })

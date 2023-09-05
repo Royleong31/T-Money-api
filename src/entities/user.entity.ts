@@ -48,6 +48,9 @@ export class User {
   @Column()
   otpSecret: string;
 
+  @Column({ nullable: true, type: 'timestamptz' })
+  otpSentDate?: Date;
+
   @Column({ type: 'int', default: 0 })
   failedOtpAttempts: number;
 

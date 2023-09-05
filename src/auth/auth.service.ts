@@ -1,17 +1,22 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { RegisterIndividualArgs } from './args/register-individual.args';
+import { LoginRequestArgs } from './args/loginRequest.args';
 import { LoginArgs } from './args/login.args';
 import { AuthPayload } from './payload/auth.payload';
 import { RegisterBusinessArgs } from './args/register-business.args';
-import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
-import { Repository } from 'typeorm';
 import { AccountType } from './enums/accountType.enum';
 import { JwtService } from '@nestjs/jwt';
 import { LOGIN_JWT_PROVIDER } from 'src/jwt/login-token.jwt.module';
 import dayjs from 'dayjs';
 import { compare, hash } from 'bcrypt';
 import { DatabaseService } from 'src/database/database.service';
+import { SendgridService } from 'src/sendgrid/sendgrid.service';
+import { hotp } from 'otplib';
+import { LoginRequestPayload } from './payload/loginRequest.payload';
+
+const OTP_EMAIL_SENDER = 'tmoney12345677@gmail.com';
+const OTP_TEMPLATE_ID = 'd-224859c725144c51a32c72d9b7cf4ce9';
 
 interface JWTPayload {
   userId: string;
@@ -24,6 +29,7 @@ export class AuthService {
     private readonly databaseService: DatabaseService,
     @Inject(LOGIN_JWT_PROVIDER)
     private readonly loginTokenJwtService: JwtService,
+    private readonly sendgridService: SendgridService,
   ) {}
 
   async getUserFromAuthToken(accessToken: string): Promise<User> {
@@ -132,7 +138,7 @@ export class AuthService {
     return { accessToken: await this.generateAccessToken(user.id) };
   }
 
-  async login(data: LoginArgs): Promise<AuthPayload> {
+  async loginRequest(data: LoginRequestArgs): Promise<LoginRequestPayload> {
     const user = await this.databaseService.userRepository.findOne({
       where: [
         { username: data.usernameOrEmail, accountType: data.accountType },
@@ -144,7 +150,58 @@ export class AuthService {
       throw new BadRequestException('Invalid username or password');
     }
 
+    // TODO: Use a separate JWT secret for login request with 30min expiry. Include the otp counter so that it has to match the latest one in DB. Store the otp counter in the loginToken
+    const loginToken = await this.generateAccessToken(user.id);
+
+    const otp = await this.generateOtp(user);
+    await this.sendOtpEmail(user, otp);
+
+    return { loginToken };
+  }
+
+  async login(data: LoginArgs): Promise<AuthPayload> {
+    // TODO: Use a separate JWT secret for login request with 30min expiry. Check that the otp counter in the loginToken matches the latest one in DB
+    const user = await this.getUserFromAuthToken(data.loginToken);
+
+    if (!user) {
+      throw new BadRequestException('Invalid login token');
+    }
+
+    if (
+      user.otpSentDate &&
+      dayjs(user.otpSentDate).isAfter(dayjs().subtract(15, 'minute')) &&
+      !hotp.verify({
+        token: data.otp,
+        secret: user.otpSecret,
+        counter: user.otpCounter,
+      })
+    ) {
+      throw new BadRequestException('Invalid OTP');
+    }
+
     return { accessToken: await this.generateAccessToken(user.id) };
+  }
+
+  async generateOtp(user: User): Promise<string> {
+    user.otpCounter = user.otpCounter + 1;
+    user.otpSentDate = new Date();
+    await this.databaseService.userRepository.save(user);
+
+    return hotp.generate(user.otpSecret, user.otpCounter);
+  }
+
+  // TODO: Move to background job so that we can return immediately and retry failed jobs
+  async sendOtpEmail(user: User, otp: string) {
+    await this.sendgridService.send({
+      from: OTP_EMAIL_SENDER,
+      to: user.email,
+      subject: 'T Money Login OTP',
+      templateId: OTP_TEMPLATE_ID,
+      dynamicTemplateData: {
+        username: user.username,
+        OTP: otp,
+      },
+    });
   }
 
   async generateAccessToken(userId: string): Promise<string> {

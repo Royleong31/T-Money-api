@@ -60,7 +60,6 @@ export class UserResolver {
         userId: user.id,
       });
 
-    console.log(businessInfo);
     return businessInfo;
   }
 
