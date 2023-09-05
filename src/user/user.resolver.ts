@@ -63,6 +63,7 @@ export class UserResolver {
     return businessInfo;
   }
 
+  // TODO: Only resolve field for this account. You shouldn't be able to see other people's balances
   @ResolveField()
   async balances(@Parent() user: User): Promise<Balance[]> {
     const balances =

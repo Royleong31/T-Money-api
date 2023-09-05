@@ -8,6 +8,7 @@ import { MerchantPayQRArgs } from './args/merchant-pay-qr.args';
 import { MerchantPayment } from 'src/entities/merchant-payment.entity';
 import { MerchantPaymentStatus } from 'src/enums/merchant-payment-status.enum';
 import { TransactionType } from 'src/enums/transaction-type.enum';
+import { AccountType } from 'src/auth/enums/accountType.enum';
 
 @Injectable()
 export class MerchantService {
@@ -17,6 +18,10 @@ export class MerchantService {
     merchant: User,
     data: MerchantRequestQRArgs,
   ): Promise<MerchantPayment> {
+    if (merchant.accountType !== AccountType.BUSINESS) {
+      throw new BadRequestException('Only business accounts can request QR');
+    }
+
     const merchantPayment =
       this.databaseService.merchantPaymentRepository.create({
         orderId: data.orderId,
@@ -93,7 +98,7 @@ export class MerchantService {
         await manager.save(sendPaymentTrxn);
 
         const receivePaymentTrxn = transactionRepository.create({
-          userId: user.id,
+          userId: merchantPayment.merchantId,
           currency: merchantPayment.currency,
           amount: merchantPayment.amount,
           type: TransactionType.MERCHANT_PAYMENT_RECEIVED,

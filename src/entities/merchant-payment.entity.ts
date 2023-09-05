@@ -45,7 +45,7 @@ export class MerchantPayment {
 
   @ManyToOne(() => User)
   @JoinColumn()
-  @Field(() => User, { nullable: true })
+  @Field(() => User)
   merchant: User; // to
 
   @Field(() => Number)

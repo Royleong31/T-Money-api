@@ -98,7 +98,7 @@ type MerchantPayment {
   customerId: String
   customer: User
   merchantId: String!
-  merchant: User
+  merchant: User!
   amount: Float!
   currency: Currency!
   merchantPaymentStatus: MerchantPaymentStatus!
