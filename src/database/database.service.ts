@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ApiKeyRepository } from 'src/repositories/api-key.repository';
 import { BusinessInfoRepository } from 'src/repositories/business-info.repository';
 import { InternalTransferRepository } from 'src/repositories/internal-transfer.repository';
 import { MerchantPaymentRepository } from 'src/repositories/merchant-payment.repository';
@@ -21,5 +22,6 @@ export class DatabaseService {
     public readonly transactionRepository: TransactionRepository,
     public readonly merchantPaymentRepository: MerchantPaymentRepository,
     public readonly internalTransferRepository: InternalTransferRepository,
+    public readonly apiKeyRepository: ApiKeyRepository,
   ) {}
 }

@@ -15,6 +15,7 @@ import { MerchantRequestQRArgs } from './args/merchant-request-qr.args';
 import { User } from 'src/entities/user.entity';
 import { MerchantPayment } from 'src/entities/merchant-payment.entity';
 import { DatabaseService } from 'src/database/database.service';
+import { ApiKey } from 'src/auth/decorators/api-key.decorator';
 
 @Resolver(() => MerchantPayment)
 export class MerchantResolver {
@@ -32,7 +33,7 @@ export class MerchantResolver {
     return user;
   }
 
-  @Auth()
+  @ApiKey()
   @Mutation(() => MerchantPayment)
   async merchantRequestQR(
     @RequestUser() merchant: User,

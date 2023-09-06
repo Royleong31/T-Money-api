@@ -19,6 +19,17 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type BusinessInfo {
+  id: String!
+  name: String!
+  uen: String!
+  country: String!
+  postalCode: String!
+  address: String!
+  updatedAt: DateTime!
+  createdAt: DateTime!
+}
+
 type Balance {
   amount: Float!
   currency: Currency!
@@ -46,17 +57,6 @@ type User {
 enum AccountType {
   INDIVIDUAL
   BUSINESS
-}
-
-type BusinessInfo {
-  id: String!
-  name: String!
-  uen: String!
-  country: String!
-  postalCode: String!
-  address: String!
-  updatedAt: DateTime!
-  createdAt: DateTime!
 }
 
 type PayPalDeposit {
@@ -153,6 +153,10 @@ type LoginRequestPayload {
   loginToken: String!
 }
 
+type ApiKeyPayload {
+  apiKey: String!
+}
+
 type TransactionDetails {
   transactionsIn: [Transaction!]!
   transactionsOut: [Transaction!]!
@@ -182,10 +186,15 @@ type Mutation {
   registerIndividual(username: String!, email: String!, password: String!, firstName: String!, lastName: String!, dateOfBirth: String!, country: String!, postcode: String!, occupation: String!): AuthPayload!
   loginRequest(usernameOrEmail: String!, password: String!, accountType: AccountType!): LoginRequestPayload!
   login(loginToken: String!, otp: String!): AuthPayload!
+  generateApiKey(label: String!, type: ApiKeyType!): ApiKeyPayload!
   requestDeposit(amount: Float!, currency: Currency!): PayPalDeposit!
   confirmDeposit(paypalCheckoutId: String!): PayPalDeposit!
   requestWithdraw(amount: Float!, currency: Currency!, paypalEmail: String!): PayPalWithdraw!
   merchantRequestQR(orderId: String!, amount: Float!, currency: Currency!): MerchantPayment!
   merchantPayQR(id: String!): MerchantPayment!
   makeInternalTransfer(amount: Float!, currency: Currency!, toUsername: String!, note: String!): InternalTransfer!
+}
+
+enum ApiKeyType {
+  CREATE_PAYMENT_QR
 }

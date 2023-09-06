@@ -15,6 +15,10 @@ import { SendgridService } from 'src/sendgrid/sendgrid.service';
 import { hotp } from 'otplib';
 import { LoginRequestPayload } from './payload/loginRequest.payload';
 import { ACCESS_TOKEN_JWT_PROVIDER } from 'src/jwt/access-token.jwt.module';
+import { GenerateApiKeyArgs } from './args/generate-api-keys.args';
+import { ApiKeyPayload } from './payload/api-key.payload';
+import crypto from 'crypto';
+import { decodeBase64, encodeBase64 } from 'src/utils/base64Utils';
 
 const OTP_EMAIL_SENDER = 'tmoney12345677@gmail.com';
 const OTP_TEMPLATE_ID = 'd-224859c725144c51a32c72d9b7cf4ce9';
@@ -25,7 +29,7 @@ interface JWTPayload {
 }
 
 export enum JwtType {
-  ACESS_TOKEN,
+  ACCESS_TOKEN,
   LOGIN_TOKEN,
 }
 
@@ -41,9 +45,52 @@ export class AuthService {
   ) {}
 
   jwtServiceMap: Record<JwtType, JwtService> = {
-    [JwtType.ACESS_TOKEN]: this.accessTokenJwtService,
+    [JwtType.ACCESS_TOKEN]: this.accessTokenJwtService,
     [JwtType.LOGIN_TOKEN]: this.loginTokenJwtService,
   };
+
+  async getUserFromApiKey(apiKey: string): Promise<User> {
+    try {
+      const [base64Id, base64Secret] = apiKey.split(':');
+      const id = decodeBase64(base64Id);
+      const secret = decodeBase64(base64Secret);
+
+      const apiKeyFound = await this.databaseService.apiKeyRepository.findOne({
+        where: { id },
+        relations: {
+          merchant: true,
+        },
+      });
+
+      if (!apiKeyFound || !(await compare(secret, apiKeyFound.hashedSecret))) {
+        throw new BadRequestException('Invalid API key');
+      }
+
+      return apiKeyFound.merchant;
+    } catch (error) {
+      throw new BadRequestException('Invalid API key');
+    }
+  }
+
+  async generateApiKey(
+    merchant: User,
+    data: GenerateApiKeyArgs,
+  ): Promise<ApiKeyPayload> {
+    const secret = crypto.randomUUID();
+    const hashedSecret = await hash(secret, 10);
+
+    const apiKey = this.databaseService.apiKeyRepository.create({
+      merchantId: merchant.id,
+      type: data.type,
+      hashedSecret,
+      label: data.label,
+    });
+
+    await this.databaseService.apiKeyRepository.save(apiKey);
+
+    const apiKeyString = `${encodeBase64(apiKey.id)}:${encodeBase64(secret)}`;
+    return { apiKey: apiKeyString };
+  }
 
   async getUserFromAuthToken(
     accessToken: string,
@@ -114,7 +161,10 @@ export class AuthService {
     );
 
     return {
-      accessToken: await this.generateAccessToken(user.id, JwtType.ACESS_TOKEN),
+      accessToken: await this.generateAccessToken(
+        user.id,
+        JwtType.ACCESS_TOKEN,
+      ),
     };
   }
 
@@ -154,7 +204,10 @@ export class AuthService {
     );
 
     return {
-      accessToken: await this.generateAccessToken(user.id, JwtType.ACESS_TOKEN),
+      accessToken: await this.generateAccessToken(
+        user.id,
+        JwtType.ACCESS_TOKEN,
+      ),
     };
   }
 
@@ -205,7 +258,10 @@ export class AuthService {
     }
 
     return {
-      accessToken: await this.generateAccessToken(user.id, JwtType.ACESS_TOKEN),
+      accessToken: await this.generateAccessToken(
+        user.id,
+        JwtType.ACCESS_TOKEN,
+      ),
     };
   }
 

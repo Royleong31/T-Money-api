@@ -7,10 +7,10 @@ import {
 import { GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 import { Reflector } from '@nestjs/core';
 import { AuthService, JwtType } from '../auth.service';
-import { AUTH_GUARD_KEY } from '../decorators/auth.decorator';
+import { API_KEY_GUARD_KEY } from '../decorators/api-key.decorator';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class ApiKeyGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly authService: AuthService,
@@ -18,7 +18,7 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext) {
     const auth = this.reflector.get<boolean>(
-      AUTH_GUARD_KEY,
+      API_KEY_GUARD_KEY,
       context.getHandler(),
     );
 
@@ -27,28 +27,25 @@ export class AuthGuard implements CanActivate {
     }
 
     let req: any;
-    let accessToken: string;
+    let apiKey: string;
 
     if (context.getType<GqlContextType>() === 'graphql') {
       const gqlContext = GqlExecutionContext.create(context).getContext();
       req = gqlContext.req;
-      accessToken = gqlContext?.connectionParams?.authorization;
+      apiKey = gqlContext?.connectionParams?.authorization;
     } else {
       req = context.switchToHttp().getRequest();
     }
 
-    if (!accessToken && req?.headers?.authorization) {
-      accessToken = req?.headers?.authorization.split(' ').pop();
+    if (!apiKey && req?.headers?.authorization) {
+      apiKey = req?.headers?.authorization.split(' ').pop();
     }
 
-    if (!accessToken) {
+    if (!apiKey) {
       throw new UnauthorizedException('UNAUTHENTICATED');
     }
 
-    const user = await this.authService.getUserFromAuthToken(
-      accessToken,
-      JwtType.ACCESS_TOKEN,
-    );
+    const user = await this.authService.getUserFromApiKey(apiKey);
 
     if (user) {
       req.user = user;

@@ -19,6 +19,8 @@ import { Transaction } from 'src/entities/transaction.entity';
 import { TransactionRepository } from 'src/repositories/transaction.repository';
 import { InternalTransferRepository } from 'src/repositories/internal-transfer.repository';
 import { MerchantPaymentRepository } from 'src/repositories/merchant-payment.repository';
+import { ApiKey } from 'src/entities/api-key.entity';
+import { ApiKeyRepository } from 'src/repositories/api-key.repository';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { MerchantPaymentRepository } from 'src/repositories/merchant-payment.rep
           InternalTransfer,
           MerchantPayment,
           Transaction,
+          ApiKey,
         ],
         timezone: 'Z',
       }),
@@ -50,6 +53,7 @@ import { MerchantPaymentRepository } from 'src/repositories/merchant-payment.rep
       InternalTransferRepository,
       MerchantPaymentRepository,
       TransactionRepository,
+      ApiKeyRepository,
     ]),
   ],
   providers: [DatabaseService],

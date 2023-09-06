@@ -7,6 +7,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './guard/auth.guard';
 import { SendgridModule } from 'src/sendgrid/sendgrid.module';
 import { AccessTokenJwtModule } from 'src/jwt/access-token.jwt.module';
+import { ApiKeyGuard } from './guard/api-key.guard';
 
 @Module({
   imports: [
@@ -19,6 +20,10 @@ import { AccessTokenJwtModule } from 'src/jwt/access-token.jwt.module';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ApiKeyGuard,
     },
     AuthResolver,
     AuthService,
