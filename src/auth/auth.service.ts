@@ -7,13 +7,14 @@ import { RegisterBusinessArgs } from './args/register-business.args';
 import { User } from 'src/entities/user.entity';
 import { AccountType } from './enums/accountType.enum';
 import { JwtService } from '@nestjs/jwt';
-import { LOGIN_JWT_PROVIDER } from 'src/jwt/login-token.jwt.module';
+import { LOGIN_TOKEN_JWT_PROVIDER } from 'src/jwt/login-token.jwt.module';
 import dayjs from 'dayjs';
 import { compare, hash } from 'bcrypt';
 import { DatabaseService } from 'src/database/database.service';
 import { SendgridService } from 'src/sendgrid/sendgrid.service';
 import { hotp } from 'otplib';
 import { LoginRequestPayload } from './payload/loginRequest.payload';
+import { ACCESS_TOKEN_JWT_PROVIDER } from 'src/jwt/access-token.jwt.module';
 
 const OTP_EMAIL_SENDER = 'tmoney12345677@gmail.com';
 const OTP_TEMPLATE_ID = 'd-224859c725144c51a32c72d9b7cf4ce9';
@@ -23,18 +24,33 @@ interface JWTPayload {
   createdAt: string;
 }
 
+export enum JwtType {
+  ACESS_TOKEN,
+  LOGIN_TOKEN,
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly databaseService: DatabaseService,
-    @Inject(LOGIN_JWT_PROVIDER)
+    @Inject(ACCESS_TOKEN_JWT_PROVIDER)
+    private readonly accessTokenJwtService: JwtService,
+    @Inject(LOGIN_TOKEN_JWT_PROVIDER)
     private readonly loginTokenJwtService: JwtService,
     private readonly sendgridService: SendgridService,
   ) {}
 
-  async getUserFromAuthToken(accessToken: string): Promise<User> {
+  jwtServiceMap: Record<JwtType, JwtService> = {
+    [JwtType.ACESS_TOKEN]: this.accessTokenJwtService,
+    [JwtType.LOGIN_TOKEN]: this.loginTokenJwtService,
+  };
+
+  async getUserFromAuthToken(
+    accessToken: string,
+    jwtType: JwtType,
+  ): Promise<User> {
     try {
-      const payload: JWTPayload = await this.loginTokenJwtService.verifyAsync(
+      const payload: JWTPayload = await this.jwtServiceMap[jwtType].verifyAsync(
         accessToken,
       );
 
@@ -97,7 +113,9 @@ export class AuthService {
       },
     );
 
-    return { accessToken: await this.generateAccessToken(user.id) };
+    return {
+      accessToken: await this.generateAccessToken(user.id, JwtType.ACESS_TOKEN),
+    };
   }
 
   async registerIndividual(data: RegisterIndividualArgs): Promise<AuthPayload> {
@@ -135,7 +153,9 @@ export class AuthService {
       },
     );
 
-    return { accessToken: await this.generateAccessToken(user.id) };
+    return {
+      accessToken: await this.generateAccessToken(user.id, JwtType.ACESS_TOKEN),
+    };
   }
 
   async loginRequest(data: LoginRequestArgs): Promise<LoginRequestPayload> {
@@ -150,8 +170,10 @@ export class AuthService {
       throw new BadRequestException('Invalid username or password');
     }
 
-    // TODO: Use a separate JWT secret for login request with 30min expiry. Include the otp counter so that it has to match the latest one in DB. Store the otp counter in the loginToken
-    const loginToken = await this.generateAccessToken(user.id);
+    const loginToken = await this.generateAccessToken(
+      user.id,
+      JwtType.LOGIN_TOKEN,
+    );
 
     const otp = await this.generateOtp(user);
     await this.sendOtpEmail(user, otp);
@@ -161,7 +183,10 @@ export class AuthService {
 
   async login(data: LoginArgs): Promise<AuthPayload> {
     // TODO: Use a separate JWT secret for login request with 30min expiry. Check that the otp counter in the loginToken matches the latest one in DB
-    const user = await this.getUserFromAuthToken(data.loginToken);
+    const user = await this.getUserFromAuthToken(
+      data.loginToken,
+      JwtType.LOGIN_TOKEN,
+    );
 
     if (!user) {
       throw new BadRequestException('Invalid login token');
@@ -179,7 +204,9 @@ export class AuthService {
       throw new BadRequestException('Invalid OTP');
     }
 
-    return { accessToken: await this.generateAccessToken(user.id) };
+    return {
+      accessToken: await this.generateAccessToken(user.id, JwtType.ACESS_TOKEN),
+    };
   }
 
   async generateOtp(user: User): Promise<string> {
@@ -204,8 +231,8 @@ export class AuthService {
     });
   }
 
-  async generateAccessToken(userId: string): Promise<string> {
-    return this.loginTokenJwtService.signAsync({
+  async generateAccessToken(userId: string, jwtType: JwtType): Promise<string> {
+    return this.jwtServiceMap[jwtType].signAsync({
       userId,
       createdAt: dayjs().toISOString(),
     } as JWTPayload);

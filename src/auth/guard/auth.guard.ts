@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 import { Reflector } from '@nestjs/core';
-import { AuthService } from '../auth.service';
+import { AuthService, JwtType } from '../auth.service';
 import { AUTH_GUARD_KEY } from '../decorators/auth.decorator';
 
 @Injectable()
@@ -48,7 +48,10 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('UNAUTHENTICATED');
     }
 
-    const user = await this.authService.getUserFromAuthToken(accessToken);
+    const user = await this.authService.getUserFromAuthToken(
+      accessToken,
+      JwtType.ACESS_TOKEN,
+    );
 
     if (user) {
       req.user = user;
