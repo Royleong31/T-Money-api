@@ -235,7 +235,6 @@ export class AuthService {
   }
 
   async login(data: LoginArgs): Promise<AuthPayload> {
-    // TODO: Use a separate JWT secret for login request with 30min expiry. Check that the otp counter in the loginToken matches the latest one in DB
     const user = await this.getUserFromAuthToken(
       data.loginToken,
       JwtType.LOGIN_TOKEN,

@@ -1,7 +1,6 @@
 import { Repository } from 'typeorm';
 import { CustomRepository } from 'src/typeorm/typeorm.decorator';
 import { Transaction } from 'src/entities/transaction.entity';
-import BigNumber from 'bignumber.js';
 import { Currency } from 'src/enums/currency.enum';
 import { Balance } from 'src/objectTypes/balance';
 
