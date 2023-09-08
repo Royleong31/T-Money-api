@@ -62,10 +62,6 @@ export class MerchantService {
       throw new BadRequestException('Merchant payment not found');
     }
 
-    if (payment.merchantId !== user.id) {
-      throw new UnauthorizedException('UNAUTHORIZED');
-    }
-
     return payment;
   }
 
