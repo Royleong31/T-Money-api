@@ -16,6 +16,8 @@ import { User } from 'src/entities/user.entity';
 import { MerchantPayment } from 'src/entities/merchant-payment.entity';
 import { DatabaseService } from 'src/database/database.service';
 import { ApiKey } from 'src/auth/decorators/api-key.decorator';
+import { RequestMerchant } from 'src/auth/decorators/request-merchant.decorator';
+import { UnauthorizedException } from '@nestjs/common';
 
 @Resolver(() => MerchantPayment)
 export class MerchantResolver {
@@ -36,21 +38,29 @@ export class MerchantResolver {
   @ApiKey()
   @Mutation(() => MerchantPayment)
   async merchantRequestQR(
-    @RequestUser() merchant: User,
+    @RequestMerchant() merchant: User,
     @Args({ type: () => MerchantRequestQRArgs }) data: MerchantRequestQRArgs,
   ): Promise<MerchantPayment> {
     return this.merchantService.requestQR(merchant, data);
   }
 
   // To be checked by the merchant to see if the order has succeeded. Can also be used by the customer to check for the order details like currency and amount
-  @Auth()
+  // User must input either API key or access token (Authentication)
+  // and the user must be the merchant that created the merchant QR code (Authorization)
+  @Auth(false)
+  @ApiKey(false)
   @Query(() => MerchantPayment)
   async merchantGetQRDetails(
     @RequestUser() user: User,
+    @RequestMerchant() merchant: User,
     @Args({ type: () => MerchantGetQRDetailsArgs })
     data: MerchantGetQRDetailsArgs,
   ): Promise<MerchantPayment> {
-    return this.merchantService.getQRDetails(user, data);
+    if (!user && !merchant) {
+      throw new UnauthorizedException('UNAUTHENTICATED');
+    }
+
+    return this.merchantService.getQRDetails(user ?? merchant, data);
   }
 
   // used by customers to pay for orders
@@ -62,6 +72,4 @@ export class MerchantResolver {
   ): Promise<MerchantPayment> {
     return this.merchantService.customerPayQR(user, data);
   }
-
-  // TODO: Resolve the user behind the payment
 }

@@ -44,6 +44,7 @@ export class UserResolver {
     return this.userService.getTransactionsSummary(user, data);
   }
 
+  // TODO: Authorization checks for all ResolveFields
   @ResolveField()
   async userInfo(@Parent() user: User): Promise<UserInfo> {
     const userInfo = await this.databaseService.userInfoRepository.findOneBy({

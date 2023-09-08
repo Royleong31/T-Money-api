@@ -25,6 +25,9 @@ export class ApiKey {
   @Column()
   label: string;
 
+  @Column()
+  webhookUrl: string;
+
   // Both payer and payee will have the same internalTransferId
   @ManyToOne(() => User)
   @JoinColumn()

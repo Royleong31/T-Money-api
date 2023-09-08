@@ -30,7 +30,11 @@ export class UserService {
     user: User,
     data: TransactionSummaryArgs,
   ): Promise<TransactionDetails> {
-    if (dayjs(data.fromDate).isAfter(dayjs(data.toDate))) {
+    if (
+      data.fromDate &&
+      data.toDate &&
+      dayjs(data.fromDate).isAfter(dayjs(data.toDate))
+    ) {
       throw new BadRequestException('fromDate must be before toDate');
     }
 

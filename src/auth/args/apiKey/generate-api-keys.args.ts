@@ -9,4 +9,7 @@ export class GenerateApiKeyArgs {
 
   @Field(() => ApiKeyType)
   type: ApiKeyType;
+
+  @Field(() => String)
+  webhookUrl: string;
 }

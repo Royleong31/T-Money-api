@@ -56,13 +56,13 @@ export class AuthResolver {
   }
 
   // Everything below involves creating, getting, and revoking api keys
-  @Mutation(() => ApiKeyPayload)
+  @Mutation(() => String)
   @Auth()
   generateApiKey(
     @RequestUser() user: User,
     @Args({ type: () => GenerateApiKeyArgs })
     data: GenerateApiKeyArgs,
-  ): Promise<ApiKeyPayload> {
+  ): Promise<string> {
     if (user.accountType !== AccountType.BUSINESS) {
       throw new BadRequestException('Not Business account');
     }

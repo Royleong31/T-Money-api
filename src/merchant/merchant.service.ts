@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 import { DatabaseService } from 'src/database/database.service';
 import { User } from 'src/entities/user.entity';
@@ -47,9 +51,22 @@ export class MerchantService {
     user: User,
     data: MerchantGetQRDetailsArgs,
   ): Promise<MerchantPayment> {
-    return this.databaseService.merchantPaymentRepository.findOneByOrFail({
-      id: data.id,
-    });
+    const payment =
+      await this.databaseService.merchantPaymentRepository.findOne({
+        where: {
+          id: data.id,
+        },
+      });
+
+    if (!payment) {
+      throw new BadRequestException('Merchant payment not found');
+    }
+
+    if (payment.merchantId !== user.id) {
+      throw new UnauthorizedException('UNAUTHORIZED');
+    }
+
+    return payment;
   }
 
   async customerPayQR(

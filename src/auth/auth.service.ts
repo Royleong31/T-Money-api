@@ -60,37 +60,33 @@ export class AuthService {
       const prefix = encodeBase64(apiKey.id);
 
       return {
-        apiKey: `${prefix}:${encodeBase64(apiKey.hashedSecret)}`,
         label: apiKey.label,
         prefix,
         type: apiKey.type,
         merchantId: apiKey.merchantId,
+        webhookUrl: apiKey.webhookUrl,
       };
     });
   }
 
   async revokeApiKey(userId: string, prefix: string): Promise<boolean> {
-    try {
-      const id = decodeBase64(prefix);
+    const id = decodeBase64(prefix);
 
-      const apiKey = await this.databaseService.apiKeyRepository.findOne({
-        where: { id },
-      });
+    const apiKey = await this.databaseService.apiKeyRepository.findOne({
+      where: { id },
+    });
 
-      // a merchant can only revoke their own api keys
-      if (!apiKey || apiKey.merchantId !== userId) {
-        throw new BadRequestException('Invalid API key');
-      }
-
-      await this.databaseService.apiKeyRepository.delete({ id });
-      return true;
-    } catch (error) {
-      console.error(error);
-      return false;
+    // a merchant can only revoke their own api keys
+    if (!apiKey || apiKey.merchantId !== userId) {
+      throw new BadRequestException('API key not found');
     }
+
+    await this.databaseService.apiKeyRepository.delete({ id });
+    return true;
   }
 
-  async getUserFromApiKey(apiKey: string): Promise<User> {
+  // if not found or error thrown, return null, error will be thrown by the guard
+  async getUserFromApiKey(apiKey: string): Promise<User | null> {
     try {
       const [base64Id, base64Secret] = apiKey.split(':');
       const id = decodeBase64(base64Id);
@@ -104,19 +100,19 @@ export class AuthService {
       });
 
       if (!apiKeyFound || !(await compare(secret, apiKeyFound.hashedSecret))) {
-        throw new BadRequestException('Invalid API key');
+        return null;
       }
 
       return apiKeyFound.merchant;
     } catch (error) {
-      throw new BadRequestException('Invalid API key');
+      return null;
     }
   }
 
   async generateApiKey(
     merchant: User,
     data: GenerateApiKeyArgs,
-  ): Promise<ApiKeyPayload> {
+  ): Promise<string> {
     const secret = crypto.randomUUID();
     const hashedSecret = await hash(secret, 10);
 
@@ -125,19 +121,14 @@ export class AuthService {
       type: data.type,
       hashedSecret,
       label: data.label,
+      webhookUrl: data.webhookUrl,
     });
 
     await this.databaseService.apiKeyRepository.save(apiKey);
     const prefix = encodeBase64(apiKey.id);
 
     const apiKeyString = `${prefix}:${encodeBase64(secret)}`;
-    return {
-      apiKey: apiKeyString,
-      label: data.label,
-      prefix,
-      type: data.type,
-      merchantId: apiKey.merchantId,
-    };
+    return apiKeyString;
   }
 
   async getUserFromAuthToken(
@@ -179,6 +170,7 @@ export class AuthService {
           password: await hash(data.password, 10),
           accountType: AccountType.BUSINESS,
           otpSecret: Math.round(Math.random() * 10 ** 16).toString(16),
+          otpSentDate: null,
         });
 
         await manager.save(user);

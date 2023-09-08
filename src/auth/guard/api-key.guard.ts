@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 import { Reflector } from '@nestjs/core';
-import { AuthService, JwtType } from '../auth.service';
+import { AuthService } from '../auth.service';
 import { API_KEY_GUARD_KEY } from '../decorators/api-key.decorator';
 
 @Injectable()
@@ -17,14 +17,10 @@ export class ApiKeyGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext) {
-    const auth = this.reflector.get<boolean>(
+    const throwIfUnauthenticated = this.reflector.get<boolean>(
       API_KEY_GUARD_KEY,
       context.getHandler(),
     );
-
-    if (!auth) {
-      return true;
-    }
 
     let req: any;
     let apiKey: string;
@@ -41,17 +37,20 @@ export class ApiKeyGuard implements CanActivate {
       apiKey = req?.headers?.authorization.split(' ').pop();
     }
 
-    if (!apiKey) {
+    if (!apiKey && throwIfUnauthenticated) {
       throw new UnauthorizedException('UNAUTHENTICATED');
     }
 
     const user = await this.authService.getUserFromApiKey(apiKey);
 
     if (user) {
-      req.user = user;
+      req.apiKeyUser = user;
       return true;
     }
 
-    throw new UnauthorizedException('UNAUTHENTICATED');
+    if (throwIfUnauthenticated) {
+      throw new UnauthorizedException('UNAUTHENTICATED');
+    }
+    return true;
   }
 }

@@ -17,14 +17,10 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext) {
-    const auth = this.reflector.get<boolean>(
+    const throwIfUnauthenticated = this.reflector.get<boolean>(
       AUTH_GUARD_KEY,
       context.getHandler(),
     );
-
-    if (!auth) {
-      return true;
-    }
 
     let req: any;
     let accessToken: string;
@@ -41,7 +37,7 @@ export class AuthGuard implements CanActivate {
       accessToken = req?.headers?.authorization.split(' ').pop();
     }
 
-    if (!accessToken) {
+    if (!accessToken && throwIfUnauthenticated) {
       throw new UnauthorizedException('UNAUTHENTICATED');
     }
 
@@ -55,6 +51,9 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    throw new UnauthorizedException('UNAUTHENTICATED');
+    if (throwIfUnauthenticated) {
+      throw new UnauthorizedException('UNAUTHENTICATED');
+    }
+    return true;
   }
 }

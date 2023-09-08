@@ -154,11 +154,11 @@ type LoginRequestPayload {
 }
 
 type ApiKeyPayload {
-  apiKey: String!
   label: String!
   merchantId: String!
   type: ApiKeyType!
   prefix: String!
+  webhookUrl: String!
 }
 
 enum ApiKeyType {
@@ -195,7 +195,7 @@ type Mutation {
   registerIndividual(username: String!, email: String!, password: String!, firstName: String!, lastName: String!, dateOfBirth: String!, country: String!, postcode: String!, occupation: String!): AuthPayload!
   loginRequest(usernameOrEmail: String!, password: String!, accountType: AccountType!): LoginRequestPayload!
   login(loginToken: String!, otp: String!): AuthPayload!
-  generateApiKey(label: String!, type: ApiKeyType!): ApiKeyPayload!
+  generateApiKey(label: String!, type: ApiKeyType!, webhookUrl: String!): String!
   revokeApiKey(prefix: String!): Boolean!
   requestDeposit(amount: Float!, currency: Currency!): PayPalDeposit!
   confirmDeposit(paypalCheckoutId: String!): PayPalDeposit!
