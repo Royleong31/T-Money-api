@@ -13,6 +13,7 @@ import { InternalTransfer } from 'src/entities/internal-transfer.entity';
 import { RequestUser } from 'src/auth/decorators/request-user.decorator';
 import { User } from 'src/entities/user.entity';
 import { MakeInternalTransferArgs } from './args/make-internal-transfer.args';
+import { BadRequestException } from '@nestjs/common';
 
 @Resolver(() => InternalTransfer)
 export class InternalTransferResolver {
@@ -43,9 +44,20 @@ export class InternalTransferResolver {
   async getInternalTransfer(
     @Args('id', { type: () => String }) id: string,
   ): Promise<InternalTransfer> {
-    return this.databaseService.internalTransferRepository.findOneByOrFail({
-      id,
-    });
+    const internalTransfer =
+      await this.databaseService.internalTransferRepository.findOne({
+        where: { id },
+        relations: {
+          sender: true,
+          receiver: true,
+        },
+      });
+
+    if (!internalTransfer) {
+      throw new BadRequestException('Internal transfer not found');
+    }
+
+    return internalTransfer;
   }
 
   // used when the user clicks on the paypal button

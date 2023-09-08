@@ -118,6 +118,10 @@ type Transaction {
   currency: Currency!
   amount: Float!
   type: TransactionType!
+  internalTransferId: String
+  paypalDepositId: String
+  paypalWithdrawalId: String
+  merchantPaymentId: String
   updatedAt: DateTime!
   createdAt: DateTime!
 }

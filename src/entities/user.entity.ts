@@ -13,6 +13,7 @@ import {
 import { UserInfo } from './user-info.entity';
 import { BusinessInfo } from './business-info.entity';
 import { Balance } from 'src/objectTypes/balance';
+import { OwnerOnly } from 'src/middlewares/authorisation.middleware';
 
 @ObjectType()
 @Entity()
@@ -31,15 +32,18 @@ export class User {
 
   @Field(() => String)
   @Column({ unique: true, transformer: new LowerCaseTransformer() })
+  @OwnerOnly()
   email: string;
 
   // These 2 fields are used for email verification, and are not used as of now
   @Field(() => GraphQLISODateTime, { nullable: true })
   @Column({ nullable: true, type: 'timestamptz' })
+  @OwnerOnly()
   emailVerificationSentAt?: Date;
 
   @Field(() => Boolean)
   @Column({ default: false })
+  @OwnerOnly()
   emailVerified: boolean;
 
   // TODO: Many of the fields should be hidden from the non-users. Like a merchant should not be able to see the balances of the user
@@ -60,26 +64,32 @@ export class User {
     enum: AccountType,
   })
   @Field(() => AccountType)
+  @OwnerOnly()
   accountType: AccountType;
 
   @OneToOne(() => UserInfo, (userInfo) => userInfo.user)
   @Field(() => UserInfo)
+  @OwnerOnly()
   userInfo: UserInfo;
 
   @OneToOne(() => BusinessInfo, (businessInfo) => businessInfo.user)
   @Field(() => BusinessInfo, { nullable: true })
+  @OwnerOnly()
   businessInfo?: BusinessInfo;
 
   // Calculated from transactions table
   @Field(() => [Balance])
+  @OwnerOnly()
   balances: Balance[];
 
   @Field(() => GraphQLISODateTime)
   @UpdateDateColumn({ type: 'timestamptz' })
+  @OwnerOnly()
   updatedAt: Date;
 
   @Field(() => GraphQLISODateTime)
   @CreateDateColumn({ type: 'timestamptz' })
   @Index()
+  @OwnerOnly()
   createdAt: Date;
 }

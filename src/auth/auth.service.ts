@@ -54,6 +54,9 @@ export class AuthService {
       where: {
         merchantId: userId,
       },
+      order: {
+        createdAt: 'DESC',
+      },
     });
 
     return apiKeyList.map((apiKey) => {

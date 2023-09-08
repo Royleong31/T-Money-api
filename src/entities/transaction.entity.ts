@@ -52,6 +52,7 @@ export class Transaction {
   type: TransactionType;
 
   @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
   internalTransferId?: string;
 
   // Both payer and payee will have the same internalTransferId
@@ -63,6 +64,7 @@ export class Transaction {
   internalTransfer?: InternalTransfer;
 
   @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
   paypalDepositId?: string;
 
   @OneToOne(() => PayPalDeposit, (paypalDeposit) => paypalDeposit.transaction)
@@ -70,6 +72,7 @@ export class Transaction {
   paypalDeposit?: PayPalDeposit;
 
   @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
   paypalWithdrawalId?: string;
 
   @OneToOne(
@@ -81,6 +84,7 @@ export class Transaction {
 
   // Both customer and merchant will have the same merchantPaymentId
   @Column({ nullable: true })
+  @Field(() => String, { nullable: true })
   merchantPaymentId?: string;
 
   @ManyToOne(
