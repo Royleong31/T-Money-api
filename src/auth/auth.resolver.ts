@@ -1,12 +1,12 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { RegisterBusinessArgs } from './args/register-business.args';
+import { RegisterBusinessArgs } from './args/loginAndRegister/register-business.args';
 import { AuthPayload } from './payload/auth.payload';
 import { AuthService } from './auth.service';
-import { RegisterIndividualArgs } from './args/register-individual.args';
-import { LoginRequestArgs } from './args/loginRequest.args';
+import { RegisterIndividualArgs } from './args/loginAndRegister/register-individual.args';
+import { LoginRequestArgs } from './args/loginAndRegister/loginRequest.args';
 import { LoginRequestPayload } from './payload/loginRequest.payload';
-import { LoginArgs } from './args/login.args';
-import { GenerateApiKeyArgs } from './args/generate-api-keys.args';
+import { LoginArgs } from './args/loginAndRegister/login.args';
+import { GenerateApiKeyArgs } from './args/apiKey/generate-api-keys.args';
 import { ApiKeyPayload } from './payload/api-key.payload';
 import { Auth } from './decorators/auth.decorator';
 import { User } from 'src/entities/user.entity';
@@ -55,6 +55,7 @@ export class AuthResolver {
     return this.authService.login(data);
   }
 
+  // Everything below involves creating, getting, and revoking api keys
   @Mutation(() => ApiKeyPayload)
   @Auth()
   generateApiKey(
@@ -63,11 +64,33 @@ export class AuthResolver {
     data: GenerateApiKeyArgs,
   ): Promise<ApiKeyPayload> {
     if (user.accountType !== AccountType.BUSINESS) {
-      throw new BadRequestException(
-        'Only business account can generate api key',
-      );
+      throw new BadRequestException('Not Business account');
     }
 
     return this.authService.generateApiKey(user, data);
+  }
+
+  @Query(() => [ApiKeyPayload])
+  @Auth()
+  getApiKeyList(@RequestUser() user: User): Promise<ApiKeyPayload[]> {
+    if (user.accountType !== AccountType.BUSINESS) {
+      throw new BadRequestException('Not Business account');
+    }
+
+    return this.authService.getApiKeyList(user.id);
+  }
+
+  @Mutation(() => Boolean)
+  @Auth()
+  revokeApiKey(
+    @RequestUser() user: User,
+    @Args('prefix', { type: () => String })
+    prefix: string,
+  ): Promise<boolean> {
+    if (user.accountType !== AccountType.BUSINESS) {
+      throw new BadRequestException('Not Business account');
+    }
+
+    return this.authService.revokeApiKey(user.id, prefix);
   }
 }

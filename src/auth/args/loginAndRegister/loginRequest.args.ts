@@ -1,5 +1,5 @@
 import { ArgsType, Field } from '@nestjs/graphql';
-import { AccountType } from '../enums/accountType.enum';
+import { AccountType } from 'src/auth/enums/accountType.enum';
 
 @ArgsType()
 export class LoginRequestArgs {

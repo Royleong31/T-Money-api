@@ -155,6 +155,14 @@ type LoginRequestPayload {
 
 type ApiKeyPayload {
   apiKey: String!
+  label: String!
+  merchantId: String!
+  type: ApiKeyType!
+  prefix: String!
+}
+
+enum ApiKeyType {
+  CREATE_PAYMENT_QR
 }
 
 type TransactionDetails {
@@ -169,6 +177,7 @@ type TransactionSummary {
 
 type Query {
   hello: String!
+  getApiKeyList: [ApiKeyPayload!]!
   me: User!
   transactions(fromDate: DateTime, toDate: DateTime, sortOrder: SortOrder! = DESC, currency: Currency!): TransactionDetails!
   getTransactionSummary(fromDate: DateTime, toDate: DateTime, sortOrder: SortOrder! = DESC, currency: Currency!): TransactionSummary!
@@ -187,14 +196,11 @@ type Mutation {
   loginRequest(usernameOrEmail: String!, password: String!, accountType: AccountType!): LoginRequestPayload!
   login(loginToken: String!, otp: String!): AuthPayload!
   generateApiKey(label: String!, type: ApiKeyType!): ApiKeyPayload!
+  revokeApiKey(prefix: String!): Boolean!
   requestDeposit(amount: Float!, currency: Currency!): PayPalDeposit!
   confirmDeposit(paypalCheckoutId: String!): PayPalDeposit!
   requestWithdraw(amount: Float!, currency: Currency!, paypalEmail: String!): PayPalWithdraw!
   merchantRequestQR(orderId: String!, amount: Float!, currency: Currency!): MerchantPayment!
   merchantPayQR(id: String!): MerchantPayment!
   makeInternalTransfer(amount: Float!, currency: Currency!, toUsername: String!, note: String!): InternalTransfer!
-}
-
-enum ApiKeyType {
-  CREATE_PAYMENT_QR
 }

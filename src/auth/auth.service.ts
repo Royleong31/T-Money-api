@@ -1,9 +1,9 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { RegisterIndividualArgs } from './args/register-individual.args';
-import { LoginRequestArgs } from './args/loginRequest.args';
-import { LoginArgs } from './args/login.args';
+import { RegisterIndividualArgs } from './args/loginAndRegister/register-individual.args';
+import { LoginRequestArgs } from './args/loginAndRegister/loginRequest.args';
+import { LoginArgs } from './args/loginAndRegister/login.args';
 import { AuthPayload } from './payload/auth.payload';
-import { RegisterBusinessArgs } from './args/register-business.args';
+import { RegisterBusinessArgs } from './args/loginAndRegister/register-business.args';
 import { User } from 'src/entities/user.entity';
 import { AccountType } from './enums/accountType.enum';
 import { JwtService } from '@nestjs/jwt';
@@ -15,7 +15,7 @@ import { SendgridService } from 'src/sendgrid/sendgrid.service';
 import { hotp } from 'otplib';
 import { LoginRequestPayload } from './payload/loginRequest.payload';
 import { ACCESS_TOKEN_JWT_PROVIDER } from 'src/jwt/access-token.jwt.module';
-import { GenerateApiKeyArgs } from './args/generate-api-keys.args';
+import { GenerateApiKeyArgs } from './args/apiKey/generate-api-keys.args';
 import { ApiKeyPayload } from './payload/api-key.payload';
 import crypto from 'crypto';
 import { decodeBase64, encodeBase64 } from 'src/utils/base64Utils';
@@ -48,6 +48,47 @@ export class AuthService {
     [JwtType.ACCESS_TOKEN]: this.accessTokenJwtService,
     [JwtType.LOGIN_TOKEN]: this.loginTokenJwtService,
   };
+
+  async getApiKeyList(userId: string): Promise<ApiKeyPayload[]> {
+    const apiKeyList = await this.databaseService.apiKeyRepository.find({
+      where: {
+        merchantId: userId,
+      },
+    });
+
+    return apiKeyList.map((apiKey) => {
+      const prefix = encodeBase64(apiKey.id);
+
+      return {
+        apiKey: `${prefix}:${encodeBase64(apiKey.hashedSecret)}`,
+        label: apiKey.label,
+        prefix,
+        type: apiKey.type,
+        merchantId: apiKey.merchantId,
+      };
+    });
+  }
+
+  async revokeApiKey(userId: string, prefix: string): Promise<boolean> {
+    try {
+      const id = decodeBase64(prefix);
+
+      const apiKey = await this.databaseService.apiKeyRepository.findOne({
+        where: { id },
+      });
+
+      // a merchant can only revoke their own api keys
+      if (!apiKey || apiKey.merchantId !== userId) {
+        throw new BadRequestException('Invalid API key');
+      }
+
+      await this.databaseService.apiKeyRepository.delete({ id });
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  }
 
   async getUserFromApiKey(apiKey: string): Promise<User> {
     try {
@@ -87,9 +128,16 @@ export class AuthService {
     });
 
     await this.databaseService.apiKeyRepository.save(apiKey);
+    const prefix = encodeBase64(apiKey.id);
 
-    const apiKeyString = `${encodeBase64(apiKey.id)}:${encodeBase64(secret)}`;
-    return { apiKey: apiKeyString };
+    const apiKeyString = `${prefix}:${encodeBase64(secret)}`;
+    return {
+      apiKey: apiKeyString,
+      label: data.label,
+      prefix,
+      type: data.type,
+      merchantId: apiKey.merchantId,
+    };
   }
 
   async getUserFromAuthToken(
