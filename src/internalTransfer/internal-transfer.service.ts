@@ -4,6 +4,7 @@ import { User } from 'src/entities/user.entity';
 import { MakeInternalTransferArgs } from './args/make-internal-transfer.args';
 import { InternalTransfer } from 'src/entities/internal-transfer.entity';
 import { TransactionType } from 'src/enums/transaction-type.enum';
+import { getTransactionLockString } from 'src/utils/getTransactionLockString';
 
 @Injectable()
 export class IntenalTransferService {
@@ -23,10 +24,19 @@ export class IntenalTransferService {
 
     const internalTransfer = this.databaseService.dataSource.transaction(
       async (manager) => {
-        // TODO: Add concurrency explicit lock
         const transactionRepository = manager.withRepository(
           this.databaseService.transactionRepository,
         );
+        const lockAcquired = await transactionRepository.acquireLock(
+          getTransactionLockString(user.id, data.currency),
+        );
+
+        if (!lockAcquired) {
+          throw new BadRequestException(
+            'Concurrent request error, please retry',
+          );
+        }
+
         const internalTransferRepository = manager.withRepository(
           this.databaseService.internalTransferRepository,
         );
@@ -74,7 +84,6 @@ export class IntenalTransferService {
       },
     );
 
-    // TODO: Send websocket to update balance for sender and receiver
     return internalTransfer;
   }
 }

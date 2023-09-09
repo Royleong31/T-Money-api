@@ -46,7 +46,6 @@ export class User {
   @OwnerOnly()
   emailVerified: boolean;
 
-  // TODO: Many of the fields should be hidden from the non-users. Like a merchant should not be able to see the balances of the user
   @Column({ default: 0 })
   otpCounter: number;
 

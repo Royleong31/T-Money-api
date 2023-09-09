@@ -19,7 +19,6 @@ export class RegisterIndividualArgs {
   @Field(() => String)
   lastName: string;
 
-  // TODO: Add validation for dateOfBirth. Needs to be in the past and in the format of DD-MM-YYYY format
   @Field(() => String)
   dateOfBirth: string;
 

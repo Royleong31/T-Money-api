@@ -12,6 +12,7 @@ import qs from 'qs';
 import dayjs from 'dayjs';
 import { AxiosRequestConfig } from 'axios';
 import { TransactionType } from 'src/enums/transaction-type.enum';
+import { getTransactionLockString } from 'src/utils/getTransactionLockString';
 
 const PAYPAL_API_URL = 'https://api-m.sandbox.paypal.com';
 
@@ -56,7 +57,6 @@ export class PayPalService {
     try {
       const withdraw = await this.databaseService.dataSource.transaction(
         async (manager) => {
-          // TODO: Explicit locking for user and currency
           const transactionRepository = manager.withRepository(
             this.databaseService.transactionRepository,
           );
@@ -64,7 +64,16 @@ export class PayPalService {
             this.databaseService.paypalWithdrawRepository,
           );
 
-          // TODO: Create a function for this
+          const lockAcquired = await transactionRepository.acquireLock(
+            getTransactionLockString(user.id, data.currency),
+          );
+
+          if (!lockAcquired) {
+            throw new BadRequestException(
+              'Concurrent request error, please retry',
+            );
+          }
+
           const userBalance = await transactionRepository.getUserBalance(
             user.id,
             data.currency,
@@ -199,7 +208,6 @@ export class PayPalService {
 
           return confirmWithdrawal.raw[0] as PayPalWithdraw;
         } else if (status === 'DENIED' || status === 'CANCELED') {
-          // TODO: Set the status of the withdraw table to failed
           const failedWithdrawal =
             await this.databaseService.dataSource.transaction(
               async (manager) => {
@@ -292,7 +300,6 @@ export class PayPalService {
           this.databaseService.transactionRepository,
         );
 
-        // TODO: Simultaneously create a new transaction to credit this user
         const deposit = await paypalDepositRepository.findOne({
           where: {
             paypalCheckoutId: data.paypalCheckoutId,

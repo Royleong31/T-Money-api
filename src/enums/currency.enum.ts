@@ -1,7 +1,7 @@
 import { registerEnumType } from '@nestjs/graphql';
 
 export enum Currency {
-  // Major coins
+  // Major fiat currencies
   USD = 'USD',
   SGD = 'SGD',
 }

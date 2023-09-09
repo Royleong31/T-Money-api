@@ -13,6 +13,7 @@ import { MerchantPayment } from 'src/entities/merchant-payment.entity';
 import { MerchantPaymentStatus } from 'src/enums/merchant-payment-status.enum';
 import { TransactionType } from 'src/enums/transaction-type.enum';
 import { AccountType } from 'src/auth/enums/accountType.enum';
+import { getTransactionLockString } from 'src/utils/getTransactionLockString';
 
 @Injectable()
 export class MerchantService {
@@ -71,7 +72,6 @@ export class MerchantService {
   ): Promise<MerchantPayment> {
     const merchantPayment = await this.databaseService.dataSource.transaction(
       async (manager) => {
-        // TODO: Explicit locking for user and currency
         const transactionRepository = manager.withRepository(
           this.databaseService.transactionRepository,
         );
@@ -90,6 +90,16 @@ export class MerchantService {
 
         if (!merchantPayment) {
           throw new BadRequestException('Merchant payment not found');
+        }
+
+        const lockAcquired = await transactionRepository.acquireLock(
+          getTransactionLockString(user.id, merchantPayment.currency),
+        );
+
+        if (!lockAcquired) {
+          throw new BadRequestException(
+            'Concurrent request error, please retry',
+          );
         }
 
         const userBalance = await transactionRepository.getUserBalance(

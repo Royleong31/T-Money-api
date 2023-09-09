@@ -44,7 +44,6 @@ export class UserResolver {
     return this.userService.getTransactionsSummary(user, data);
   }
 
-  // TODO: Authorization checks for all ResolveFields
   @ResolveField()
   async userInfo(@Parent() user: User): Promise<UserInfo> {
     const userInfo = await this.databaseService.userInfoRepository.findOneBy({
@@ -64,7 +63,6 @@ export class UserResolver {
     return businessInfo;
   }
 
-  // TODO: Only resolve field for this account. You shouldn't be able to see other people's balances
   @ResolveField()
   async balances(@Parent() user: User): Promise<Balance[]> {
     const balances =

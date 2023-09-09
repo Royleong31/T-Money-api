@@ -60,7 +60,7 @@ export class PayPalDeposit {
   status: PayPalStatus;
 
   @Field(() => GraphQLISODateTime)
-  @UpdateDateColumn({ type: 'timestamptz' }) // TODO: Store in UTC
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
   @Field(() => GraphQLISODateTime)
