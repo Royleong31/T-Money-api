@@ -1,73 +1,78 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# T Money Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+### Authentication and authorisation
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+- 2 types of accounts, Business and Individual.
+- Only business accounts are allowed to create merchant payment QR codes, which users can use to pay for e-commerce orders. Example site: https://t-money-ecommerce-demo.vercel.app/
+- Stateless JWT is used for authentication. When a user registers or logs in, a signed access token is created and sent to the user. This token must then be included in the Authorisation header of all authenticated requests.
+- For security, when logging in, a user needs key in an One Time Password for 2 factor authentication.
+- Nestjs middleware is used for authorisation, ensuring that sensitive information like user balances and email are hidden from all users except for the owner of the account. This is done by checking that the user's data matches the userId contained in the access token.
+- API keys can be created by business accounts, and are used by business accounts to create QR payments.
+- API keys and passwords are never stored in plaintext - they are hashed with bcrypt for security.
+- Users can view a list of API keys, and can also revoke API keys.
 
-## Description
+### Internal Transfers
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Users can make internal transfers to other users and can get data about past transactions.
+- All state changes to the database are done in a transaction for atomicity, so that all changes either succeed or fail together.
+- The database is locked with pg_try_advisory_xact_lock with the userId and currency of the payer to prevent concurrency issues.
 
-## Installation
+### Paypal
 
-```bash
-$ npm install
-```
+- When a user clicks cash in on the frontend, paypal will be contacted to generate payment information which is then sent to the frontend to open up the paypal checkout tab.
+- When a cashout request is sent, the user's balance is checked and their balance is immediately deducted to ensure that user's cannot send multiple cashout requests with a total value that is greater than their account balance.
 
-## Running the app
+### Merchant
 
-```bash
-# development
-$ npm run start
+- Business users can request QR codes for usres to pay for goods. API key is used for authentication here.
+- users can then scan the QR code generated and pay for goods.
+- The merchant can then poll the merchantGetQRDetails query to get information about the order.
+- Merchants can also input a webhook url so that they can be notified when a payment succeeds. A signing key needs to be shared between T Money and the merchant for authentication purposes.
 
-# watch mode
-$ npm run start:dev
+### SendGrid
 
-# production mode
-$ npm run start:prod
-```
+- SendGrid is used as a email provider. It can create templates such as the one that we created the OTP email.
 
-## Test
+### JWT
 
-```bash
-# unit tests
-$ npm run test
+- 2 JWT modules are used, 1 for login token and 1 for access token
+- A different secret must be used for each to ensure that they are not interchangeable.
 
-# e2e tests
-$ npm run test:e2e
+### Typeorm, Entities and Repositories folders
 
-# test coverage
-$ npm run test:cov
-```
+- Typeorm is used as an ORM, and 1 repository file is created for each entity
+- Transaction table is the single source of truth for all balances.
+- It is an append only table that record every transaction that has taken place
+- A user's balance is calculated by summing up all the transactions that the user has made for that particular currency
 
-## Support
+### GraphQL
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- Apollo Server is the library used to generate a schema file and help with GraphQL integration
+- We used graphQL as it provides a great developer experience for the frontend, as developers can see type details about what they need to pass into a request and what they will be getting back.
 
-## Stay in touch
+### Instructions to run
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- Whenever a new change to an entity file is made, a new migration must be generated by running `yarn typeorm:generate <migrationName>`
+- The migration can be run by running `yarn run:migration`
+- Install Docker on your machine and run `docker compose up`
+- Run `yarn start:dev` for development and `yarn start:prod` for production
 
-## License
+### Future improvements (short term)
 
-Nest is [MIT licensed](LICENSE).
+- Webhook should be called when a merchant payment succeeds, so when a user pays for an order, the merchant involved should receive an API request notifying them that the payment has been completed.This can be done via HTTP requests to their backend, and authentication can be done via access tokens or hashing of the request with a secret key.
+- Job queues can be used to offload long running or computationally intensive tasks such as batching Paypal requests and sending of emails.
+- Balance trigger to calculate users balance whenever a new row is added to the transactions table. This can help to speed up balance calculations, which are currently calculated by summing up all transactions in the transctions table for the user and currency.
+- Currency conversions to support cross border payment transactions
+
+### Future improvements (long term)
+
+- Use replica DBs for scaling Postgres DB reads horizontally
+- Use a load balancer and multiple server instances to scale the server horizontally
+- Redis for caching and rate limiting to prevent DDoS attacks
+- Session store to allow revokation of existing sessions.
+- Split into microservices for better scalability when we run into performance bottlenecks
+
+### Deployment
+
+- Backend is deployed to Digital Ocean, a new deployment is run when a new commit is added to the main branch
+- Supabase is used for the PostgreSQL database

@@ -137,6 +137,8 @@ export class MerchantService {
       },
     );
 
+    // TODO: Create a background job to notify the merchant that the payment has been received, body needs to be signed with a secret key that is only known to the merchant and the server
+
     return merchantPayment;
   }
 }

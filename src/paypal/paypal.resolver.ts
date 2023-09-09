@@ -1,7 +1,6 @@
 import { User } from 'src/entities/user.entity';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { RequestUser } from 'src/auth/decorators/request-user.decorator';
-import { DatabaseService } from 'src/database/database.service';
 import { Args, Mutation, Resolver } from '@nestjs/graphql';
 import { PayPalService } from './paypal.service';
 import { ConfirmDepositArgs } from './args/confirm-deposit.args';
@@ -12,10 +11,7 @@ import { PayPalWithdraw } from 'src/entities/paypal-withdraw.entity';
 
 @Resolver()
 export class PayPalResolver {
-  constructor(
-    private readonly paypalService: PayPalService,
-    private readonly databaseService: DatabaseService,
-  ) {}
+  constructor(private readonly paypalService: PayPalService) {}
 
   // used when the user clicks on the paypal button
   @Auth()
